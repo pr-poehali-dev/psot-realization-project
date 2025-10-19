@@ -3,10 +3,27 @@ import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState('home');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [joinDialogOpen, setJoinDialogOpen] = useState(false);
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '', position: '' });
+  const { toast } = useToast();
+
+  const handleJoinSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    toast({
+      title: 'Заявка отправлена!',
+      description: 'Мы свяжемся с вами в ближайшее время.',
+    });
+    setJoinDialogOpen(false);
+    setFormData({ name: '', email: '', phone: '', position: '' });
+  };
 
   const navigation = [
     { id: 'home', label: 'Главная', icon: 'Home' },
@@ -53,9 +70,68 @@ const Index = () => {
             ))}
           </nav>
 
-          <Button variant="default" size="sm" className="hidden md:flex">
-            Вступить в профсоюз
-          </Button>
+          <Dialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="default" size="sm" className="hidden md:flex">
+                Вступить в профсоюз
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle className="font-heading text-2xl">Вступить в профсоюз</DialogTitle>
+                <DialogDescription>
+                  Заполните форму, и мы свяжемся с вами для оформления членства
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleJoinSubmit} className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">ФИО *</Label>
+                  <Input
+                    id="name"
+                    required
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="Иванов Иван Иванович"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    required
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="ivanov@example.com"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Телефон *</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    required
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    placeholder="+7 (999) 123-45-67"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="position">Должность *</Label>
+                  <Input
+                    id="position"
+                    required
+                    value={formData.position}
+                    onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                    placeholder="Инженер"
+                  />
+                </div>
+                <Button type="submit" className="w-full">
+                  Отправить заявку
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
 
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild>
@@ -88,7 +164,7 @@ const Index = () => {
                     {item.label}
                   </button>
                 ))}
-                <Button className="mt-4" onClick={() => setMobileMenuOpen(false)}>
+                <Button className="mt-4" onClick={() => { setMobileMenuOpen(false); setJoinDialogOpen(true); }}>
                   Вступить в профсоюз
                 </Button>
               </nav>
