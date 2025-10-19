@@ -30,6 +30,7 @@ const Index = () => {
     { id: 'about', label: 'О нас', icon: 'Info' },
     { id: 'leadership', label: 'Руководство', icon: 'Users' },
     { id: 'activities', label: 'Деятельность', icon: 'Briefcase' },
+    { id: 'documents', label: 'Документы', icon: 'FileText' },
     { id: 'contacts', label: 'Контакты', icon: 'Mail' }
   ];
 
@@ -44,6 +45,15 @@ const Index = () => {
     { title: 'Культурно-массовая работа', description: 'Организация мероприятий, праздников и корпоративных событий', icon: 'PartyPopper' },
     { title: 'Материальная помощь', description: 'Оказание финансовой поддержки членам профсоюза', icon: 'Wallet' },
     { title: 'Оздоровление', description: 'Организация санаторно-курортного лечения и отдыха', icon: 'Heart' }
+  ];
+
+  const documents = [
+    { title: 'Устав профсоюзной организации', description: 'Основной учредительный документ', size: '2.4 МБ', format: 'PDF', icon: 'FileText' },
+    { title: 'Коллективный договор 2025', description: 'Действующий коллективный договор', size: '1.8 МБ', format: 'PDF', icon: 'FileCheck' },
+    { title: 'Положение о членских взносах', description: 'Порядок уплаты членских взносов', size: '856 КБ', format: 'PDF', icon: 'Wallet' },
+    { title: 'План работы на 2025 год', description: 'Годовой план мероприятий', size: '1.2 МБ', format: 'PDF', icon: 'Calendar' },
+    { title: 'Отчет о деятельности 2024', description: 'Годовой отчет о проделанной работе', size: '3.1 МБ', format: 'PDF', icon: 'BarChart' },
+    { title: 'Заявление о вступлении', description: 'Бланк заявления для вступления в профсоюз', size: '124 КБ', format: 'DOC', icon: 'FileEdit' }
   ];
 
   return (
@@ -321,6 +331,69 @@ const Index = () => {
                     <Icon name="Check" className="text-primary mt-1" size={20} />
                     <p className="text-muted-foreground">Организация культурно-массовых и спортивных мероприятий</p>
                   </div>
+                </CardContent>
+              </Card>
+            </div>
+          </section>
+        )}
+
+        {activeSection === 'documents' && (
+          <section className="py-16 container animate-fade-in">
+            <div className="max-w-4xl mx-auto space-y-8">
+              <h2 className="font-heading text-4xl font-bold text-primary">Документы</h2>
+              <p className="text-muted-foreground text-lg">
+                Здесь вы можете ознакомиться и скачать основные документы профсоюзной организации
+              </p>
+              
+              <div className="grid md:grid-cols-2 gap-4">
+                {documents.map((doc, index) => (
+                  <Card key={index} className="hover-scale">
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start gap-3">
+                          <Icon name={doc.icon as any} className="text-primary mt-1" size={24} />
+                          <div>
+                            <CardTitle className="text-lg">{doc.title}</CardTitle>
+                            <CardDescription className="mt-2">{doc.description}</CardDescription>
+                          </div>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Icon name="File" size={14} />
+                            {doc.format}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Icon name="HardDrive" size={14} />
+                            {doc.size}
+                          </span>
+                        </div>
+                        <Button variant="outline" size="sm">
+                          <Icon name="Download" size={16} className="mr-2" />
+                          Скачать
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              <Card className="mt-8 bg-primary/5 border-primary/20">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Icon name="Info" className="text-primary" size={24} />
+                    Информация
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    Все документы представлены в формате PDF и DOC для вашего удобства. 
+                    Если у вас возникли вопросы по документам, обратитесь в офис профсоюза 
+                    или свяжитесь с нами по телефону +7 (495) 123-45-67.
+                  </p>
                 </CardContent>
               </Card>
             </div>
