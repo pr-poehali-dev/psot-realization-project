@@ -16,6 +16,9 @@ import StoragePage from "./pages/StoragePage";
 import FolderViewPage from "./pages/FolderViewPage";
 import PabRegistrationPage from "./pages/PabRegistrationPage";
 import PabDictionariesPage from "./pages/PabDictionariesPage";
+import OrganizationsManagementPage from "./pages/OrganizationsManagementPage";
+import CreateOrganizationPage from "./pages/CreateOrganizationPage";
+import OrganizationSettingsPage from "./pages/OrganizationSettingsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +42,9 @@ const App = () => (
           <Route path="/storage/folder/:folderId" element={<FolderViewPage />} />
           <Route path="/pab-registration" element={<PabRegistrationPage />} />
           <Route path="/pab-dictionaries" element={<PabDictionariesPage />} />
+          <Route path="/organizations-management" element={<OrganizationsManagementPage />} />
+          <Route path="/create-organization" element={<CreateOrganizationPage />} />
+          <Route path="/organization-settings/:id" element={<OrganizationSettingsPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

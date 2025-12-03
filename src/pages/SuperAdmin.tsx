@@ -23,16 +23,16 @@ const SuperAdmin = () => {
   };
 
   const adminButtons = [
+    { label: 'Управление предприятиями', icon: 'Building2', color: 'from-blue-500 to-blue-600', route: '/organizations-management' },
     { label: 'Управление пользователями', icon: 'Users', color: 'from-purple-500 to-purple-600', route: '/users-management' },
     { label: 'Управление администраторами', icon: 'UserCog', color: 'from-indigo-500 to-indigo-600', route: '/admins-management' },
     { label: 'Системные настройки', icon: 'Settings', color: 'from-slate-500 to-slate-600', route: '/system-settings' },
-    { label: 'Аудит действий', icon: 'History', color: 'from-blue-500 to-blue-600', route: '/audit-log' },
-    { label: 'Статистика системы', icon: 'BarChart4', color: 'from-cyan-500 to-cyan-600', route: '/system-stats' },
+    { label: 'Аудит действий', icon: 'History', color: 'from-cyan-500 to-cyan-600', route: '/audit-log' },
+    { label: 'Статистика системы', icon: 'BarChart4', color: 'from-teal-500 to-teal-600', route: '/system-stats' },
     { label: 'Управление ролями', icon: 'Shield', color: 'from-orange-500 to-orange-600', route: '/roles-management' },
     { label: 'База данных', icon: 'Database', color: 'from-green-500 to-green-600', route: '/database' },
     { label: 'Резервное копирование', icon: 'HardDrive', color: 'from-yellow-600 to-yellow-700', route: '/backup' },
-    { label: 'Логи системы', icon: 'FileText', color: 'from-red-500 to-red-600', route: '/logs' },
-    { label: 'Уведомления', icon: 'Bell', color: 'from-pink-500 to-pink-600', route: '/notifications' },
+    { label: 'Справочники ПАБ', icon: 'BookOpen', color: 'from-pink-500 to-pink-600', route: '/pab-dictionaries' },
   ];
 
   return (

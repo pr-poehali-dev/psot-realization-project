@@ -1,4 +1,7 @@
 {
+  "org-modules": "https://functions.poehali.dev/a4f6bfe1-8f77-48b2-b6dd-70ac0a1c023a",
+  "subscription-plans": "https://functions.poehali.dev/74e617c7-d1e0-48d6-a5a6-0d25d554958e",
+  "organizations": "https://functions.poehali.dev/5fa1bf89-3c17-4533-889a-7273e1ef1e3b",
   "pab-dictionaries": "https://functions.poehali.dev/8a3ae143-7ece-49b7-9863-4341c4bef960",
   "pab-submit": "https://functions.poehali.dev/5054985e-ff94-4512-8302-c02f01b09d66",
   "pab-generate-number": "https://functions.poehali.dev/c04242d9-b386-407e-bb84-10d219a16e97",
