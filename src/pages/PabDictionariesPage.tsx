@@ -87,6 +87,28 @@ export default function PabDictionariesPage() {
     }
   };
 
+  const handleDeleteItem = async (type: DictionaryType, id: number) => {
+    if (!confirm('Удалить этот элемент?')) return;
+
+    setLoading(true);
+
+    try {
+      const response = await fetch(`https://functions.poehali.dev/8a3ae143-7ece-49b7-9863-4341c4bef960?type=${type}&id=${id}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) throw new Error('Ошибка удаления');
+
+      toast.success('Элемент удалён');
+      loadDictionaries();
+    } catch (error) {
+      toast.error('Не удалось удалить элемент');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getDictionaryTitle = (type: DictionaryType) => {
     switch (type) {
       case 'category': return 'Категории наблюдений';
@@ -120,6 +142,14 @@ export default function PabDictionariesPage() {
               {dictionaries.categories.map((item) => (
                 <div key={item.id} className="p-3 bg-blue-50 rounded-lg flex items-center justify-between">
                   <span className="text-sm">{item.name}</span>
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    onClick={() => handleDeleteItem('category', item.id)}
+                    disabled={loading}
+                  >
+                    <Icon name="Trash2" size={16} className="text-red-500" />
+                  </Button>
                 </div>
               ))}
             </div>
@@ -137,6 +167,14 @@ export default function PabDictionariesPage() {
               {dictionaries.conditions.map((item) => (
                 <div key={item.id} className="p-3 bg-green-50 rounded-lg flex items-center justify-between">
                   <span className="text-sm">{item.name}</span>
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    onClick={() => handleDeleteItem('condition', item.id)}
+                    disabled={loading}
+                  >
+                    <Icon name="Trash2" size={16} className="text-red-500" />
+                  </Button>
                 </div>
               ))}
             </div>
@@ -154,6 +192,14 @@ export default function PabDictionariesPage() {
               {dictionaries.hazards.map((item) => (
                 <div key={item.id} className="p-3 bg-red-50 rounded-lg flex items-center justify-between">
                   <span className="text-sm">{item.name}</span>
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    onClick={() => handleDeleteItem('hazard', item.id)}
+                    disabled={loading}
+                  >
+                    <Icon name="Trash2" size={16} className="text-red-500" />
+                  </Button>
                 </div>
               ))}
             </div>
@@ -164,8 +210,8 @@ export default function PabDictionariesPage() {
           <h3 className="font-semibold mb-2">Инструкция:</h3>
           <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
             <li>Нажмите кнопку "+" чтобы добавить новый элемент в справочник</li>
+            <li>Нажмите кнопку с корзиной чтобы удалить элемент</li>
             <li>Все добавленные элементы появятся в выпадающих списках при регистрации ПАБ</li>
-            <li>Элементы можно добавлять в любое время</li>
             <li>Изменения сразу доступны всем пользователям</li>
           </ul>
         </Card>
