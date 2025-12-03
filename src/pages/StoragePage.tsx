@@ -57,7 +57,8 @@ const StoragePage = () => {
 
     try {
       const userId = localStorage.getItem('userId');
-      const response = await fetch('https://functions.yandexcloud.net/d4ehvhkclqgov0fj9mqu', {
+      console.log('Creating folder:', { userId, folder_name: newFolderName.trim() });
+      const response = await fetch('https://functions.poehali.dev/89ba96e1-c10f-490a-ad91-54a977d9f798', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -66,6 +67,8 @@ const StoragePage = () => {
           folder_name: newFolderName.trim()
         })
       });
+      
+      console.log('Response status:', response.status);
 
       if (!response.ok) {
         const error = await response.json();
