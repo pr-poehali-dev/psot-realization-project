@@ -90,6 +90,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             email = body_data.get('email')
             password = body_data.get('password')
             
+            print(f"[AUTH DEBUG] Login attempt for email: {email}, password length: {len(password) if password else 0}")
+            
             if not email or not password:
                 return {
                     'statusCode': 400,
@@ -102,15 +104,25 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 }
             
             password_hash = hashlib.sha256(password.encode()).hexdigest()
+            print(f"[AUTH DEBUG] Computed hash: {password_hash}")
             
             conn = psycopg2.connect(os.environ['DATABASE_URL'])
             cur = conn.cursor()
+            
+            cur.execute("SELECT email, password_hash FROM users WHERE email = %s", (email,))
+            db_result = cur.fetchone()
+            if db_result:
+                print(f"[AUTH DEBUG] User found in DB. DB hash: {db_result[1]}")
+                print(f"[AUTH DEBUG] Hashes match: {db_result[1] == password_hash}")
+            else:
+                print(f"[AUTH DEBUG] User NOT found in DB")
             
             cur.execute(
                 "SELECT id, fio, company, position, role FROM users WHERE email = %s AND password_hash = %s",
                 (email, password_hash)
             )
             result = cur.fetchone()
+            print(f"[AUTH DEBUG] Final query result: {result is not None}")
             
             cur.close()
             conn.close()
