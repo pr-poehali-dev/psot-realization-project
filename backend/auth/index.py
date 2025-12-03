@@ -89,6 +89,18 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             
             email = body_data.get('email')
             password = body_data.get('password')
+            
+            if not email or not password:
+                return {
+                    'statusCode': 400,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'isBase64Encoded': False,
+                    'body': json.dumps({'success': False, 'error': 'Email and password required'})
+                }
+            
             password_hash = hashlib.sha256(password.encode()).hexdigest()
             
             conn = psycopg2.connect(os.environ['DATABASE_URL'])
