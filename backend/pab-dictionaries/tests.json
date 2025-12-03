@@ -1,0 +1,16 @@
+{
+  "tests": [
+    {
+      "name": "Get dictionaries",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "categories": "array",
+        "conditions": "array",
+        "hazards": "array"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

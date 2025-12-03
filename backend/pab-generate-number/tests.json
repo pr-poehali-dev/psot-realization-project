@@ -1,0 +1,16 @@
+{
+  "tests": [
+    {
+      "name": "Generate PAB number",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "doc_number": "string",
+        "counter": "number",
+        "year": "number"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

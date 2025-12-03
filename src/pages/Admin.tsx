@@ -24,6 +24,7 @@ const Admin = () => {
 
   const adminButtons = [
     { label: 'Управление пользователями', icon: 'Users', color: 'from-blue-500 to-blue-600', route: '/users-management' },
+    { label: 'Управление регистрацией ПАБ', icon: 'Settings', color: 'from-orange-500 to-orange-600', route: '/pab-dictionaries' },
     { label: 'Мониторинг предписаний', icon: 'ClipboardCheck', color: 'from-cyan-500 to-cyan-600', route: '/prescriptions-monitor' },
     { label: 'Отчёты и статистика', icon: 'BarChart3', color: 'from-green-500 to-green-600', route: '/reports-stats' },
     { label: 'Управление аудитами', icon: 'Search', color: 'from-yellow-500 to-yellow-600', route: '/audits-management' },
