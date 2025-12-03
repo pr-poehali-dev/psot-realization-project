@@ -132,6 +132,37 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 WHERE id = %s
             """, (fio, company, subdivision, position, user_id))
             conn.commit()
+            
+        elif action == 'change_email':
+            import hashlib
+            
+            new_email = body_data.get('newEmail')
+            
+            cur.execute("SELECT id FROM users WHERE email = %s AND id != %s", (new_email, user_id))
+            if cur.fetchone():
+                cur.close()
+                conn.close()
+                return {
+                    'statusCode': 400,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'isBase64Encoded': False,
+                    'body': json.dumps({'success': False, 'error': 'Email already exists'})
+                }
+            
+            cur.execute("UPDATE users SET email = %s WHERE id = %s", (new_email, user_id))
+            conn.commit()
+            
+        elif action == 'change_password':
+            import hashlib
+            
+            new_password = body_data.get('newPassword')
+            new_hash = hashlib.sha256(new_password.encode()).hexdigest()
+            
+            cur.execute("UPDATE users SET password_hash = %s WHERE id = %s", (new_hash, user_id))
+            conn.commit()
         
         cur.close()
         conn.close()
@@ -145,6 +176,65 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'isBase64Encoded': False,
             'body': json.dumps({'success': True})
         }
+    
+    if method == 'POST':
+        import psycopg2
+        import hashlib
+        
+        body_data = json.loads(event.get('body', '{}'))
+        action = body_data.get('action')
+        
+        if action == 'create_user':
+            email = body_data.get('email')
+            password = body_data.get('password')
+            fio = body_data.get('fio')
+            company = body_data.get('company')
+            subdivision = body_data.get('subdivision')
+            position = body_data.get('position')
+            role = body_data.get('role', 'user')
+            
+            password_hash = hashlib.sha256(password.encode()).hexdigest()
+            
+            conn = psycopg2.connect(os.environ['DATABASE_URL'])
+            cur = conn.cursor()
+            
+            cur.execute("SELECT id FROM users WHERE email = %s", (email,))
+            if cur.fetchone():
+                cur.close()
+                conn.close()
+                return {
+                    'statusCode': 400,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'isBase64Encoded': False,
+                    'body': json.dumps({'success': False, 'error': 'Email already exists'})
+                }
+            
+            cur.execute("""
+                INSERT INTO users (email, password_hash, fio, company, subdivision, position, role) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s) 
+                RETURNING id
+            """, (email, password_hash, fio, company, subdivision, position, role))
+            
+            user_id = cur.fetchone()[0]
+            
+            cur.execute("INSERT INTO user_stats (user_id) VALUES (%s)", (user_id,))
+            
+            conn.commit()
+            cur.close()
+            conn.close()
+            
+            return {
+                'statusCode': 200,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'isBase64Encoded': False,
+                'body': json.dumps({'success': True, 'userId': user_id, 'email': email})
+            }
     
     if method == 'DELETE':
         import psycopg2
