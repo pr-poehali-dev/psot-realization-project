@@ -1,0 +1,15 @@
+{
+  "tests": [
+    {
+      "name": "Get files in folder",
+      "method": "GET",
+      "path": "/?folder_id=1",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "files": "array",
+        "folder_name": "string"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

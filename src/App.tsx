@@ -13,6 +13,7 @@ import CreateUser from "./pages/CreateUser";
 import Profile from "./pages/Profile";
 import AdditionalPage from "./pages/AdditionalPage";
 import StoragePage from "./pages/StoragePage";
+import FolderViewPage from "./pages/FolderViewPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ const App = () => (
           <Route path="/profile" element={<Profile />} />
           <Route path="/additional" element={<AdditionalPage />} />
           <Route path="/storage" element={<StoragePage />} />
+          <Route path="/storage/folder/:folderId" element={<FolderViewPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -169,7 +169,8 @@ const StoragePage = () => {
             {folders.map((folder) => (
               <Card
                 key={folder.id}
-                className="group relative overflow-hidden bg-slate-800/50 border-yellow-600/30 hover:border-yellow-600 transition-all hover:scale-105"
+                onClick={() => navigate(`/storage/folder/${folder.id}`)}
+                className="group relative overflow-hidden cursor-pointer bg-slate-800/50 border-yellow-600/30 hover:border-yellow-600 transition-all hover:scale-105"
               >
                 <div className="p-6">
                   <div className="flex items-start justify-between mb-4">
@@ -177,7 +178,10 @@ const StoragePage = () => {
                       <Icon name="Folder" size={32} className="text-white" />
                     </div>
                     <Button
-                      onClick={() => openDeleteDialog(folder)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openDeleteDialog(folder);
+                      }}
                       variant="ghost"
                       size="icon"
                       className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
