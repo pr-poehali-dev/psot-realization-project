@@ -8,6 +8,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     Управление справочниками ПАБ (категории, условия, опасные факторы)
     GET - получить все справочники
     POST - добавить элемент в справочник
+    PUT - редактировать элемент в справочнике
     DELETE - удалить элемент из справочника
     '''
     
@@ -18,7 +19,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'statusCode': 200,
             'headers': {
                 'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+                'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
                 'Access-Control-Allow-Headers': 'Content-Type, X-User-Id',
                 'Access-Control-Max-Age': '86400'
             },
@@ -91,6 +92,52 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'Access-Control-Allow-Origin': '*'
             },
             'body': json.dumps({'id': new_id, 'name': name}, ensure_ascii=False),
+            'isBase64Encoded': False
+        }
+    
+    elif method == 'PUT':
+        body = json.loads(event.get('body', '{}'))
+        dict_type = body.get('type')
+        item_id = body.get('id')
+        name = body.get('name')
+        
+        if not dict_type or not item_id or not name:
+            cur.close()
+            conn.close()
+            return {
+                'statusCode': 400,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Missing type, id or name'}, ensure_ascii=False),
+                'isBase64Encoded': False
+            }
+        
+        if dict_type == 'category':
+            cur.execute("UPDATE pab_categories SET name = %s WHERE id = %s", (name, item_id))
+        elif dict_type == 'condition':
+            cur.execute("UPDATE pab_conditions SET name = %s WHERE id = %s", (name, item_id))
+        elif dict_type == 'hazard':
+            cur.execute("UPDATE pab_hazards SET name = %s WHERE id = %s", (name, item_id))
+        else:
+            cur.close()
+            conn.close()
+            return {
+                'statusCode': 400,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Invalid type'}, ensure_ascii=False),
+                'isBase64Encoded': False
+            }
+        
+        conn.commit()
+        cur.close()
+        conn.close()
+        
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({'id': item_id, 'name': name}, ensure_ascii=False),
             'isBase64Encoded': False
         }
     

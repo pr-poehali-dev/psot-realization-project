@@ -33,6 +33,7 @@ export default function PabDictionariesPage() {
   const [showDialog, setShowDialog] = useState(false);
   const [dialogType, setDialogType] = useState<DictionaryType>('category');
   const [newItemName, setNewItemName] = useState('');
+  const [editingItem, setEditingItem] = useState<DictionaryItem | null>(null);
 
   useEffect(() => {
     loadDictionaries();
@@ -53,10 +54,18 @@ export default function PabDictionariesPage() {
   const openAddDialog = (type: DictionaryType) => {
     setDialogType(type);
     setNewItemName('');
+    setEditingItem(null);
     setShowDialog(true);
   };
 
-  const handleAddItem = async () => {
+  const openEditDialog = (type: DictionaryType, item: DictionaryItem) => {
+    setDialogType(type);
+    setNewItemName(item.name);
+    setEditingItem(item);
+    setShowDialog(true);
+  };
+
+  const handleSaveItem = async () => {
     if (!newItemName.trim()) {
       toast.error('Введите название');
       return;
@@ -65,22 +74,39 @@ export default function PabDictionariesPage() {
     setLoading(true);
 
     try {
-      const response = await fetch('https://functions.poehali.dev/8a3ae143-7ece-49b7-9863-4341c4bef960', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: dialogType,
-          name: newItemName
-        })
-      });
+      if (editingItem) {
+        const response = await fetch('https://functions.poehali.dev/8a3ae143-7ece-49b7-9863-4341c4bef960', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: dialogType,
+            id: editingItem.id,
+            name: newItemName
+          })
+        });
 
-      if (!response.ok) throw new Error('Ошибка добавления');
+        if (!response.ok) throw new Error('Ошибка редактирования');
 
-      toast.success('Элемент добавлен');
+        toast.success('Элемент обновлён');
+      } else {
+        const response = await fetch('https://functions.poehali.dev/8a3ae143-7ece-49b7-9863-4341c4bef960', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: dialogType,
+            name: newItemName
+          })
+        });
+
+        if (!response.ok) throw new Error('Ошибка добавления');
+
+        toast.success('Элемент добавлен');
+      }
+      
       setShowDialog(false);
       loadDictionaries();
     } catch (error) {
-      toast.error('Не удалось добавить элемент');
+      toast.error(editingItem ? 'Не удалось обновить элемент' : 'Не удалось добавить элемент');
       console.error(error);
     } finally {
       setLoading(false);
@@ -142,14 +168,24 @@ export default function PabDictionariesPage() {
               {dictionaries.categories.map((item) => (
                 <div key={item.id} className="p-3 bg-blue-50 rounded-lg flex items-center justify-between">
                   <span className="text-sm">{item.name}</span>
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    onClick={() => handleDeleteItem('category', item.id)}
-                    disabled={loading}
-                  >
-                    <Icon name="Trash2" size={16} className="text-red-500" />
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      onClick={() => openEditDialog('category', item)}
+                      disabled={loading}
+                    >
+                      <Icon name="Pencil" size={16} className="text-blue-600" />
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      onClick={() => handleDeleteItem('category', item.id)}
+                      disabled={loading}
+                    >
+                      <Icon name="Trash2" size={16} className="text-red-500" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -167,14 +203,24 @@ export default function PabDictionariesPage() {
               {dictionaries.conditions.map((item) => (
                 <div key={item.id} className="p-3 bg-green-50 rounded-lg flex items-center justify-between">
                   <span className="text-sm">{item.name}</span>
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    onClick={() => handleDeleteItem('condition', item.id)}
-                    disabled={loading}
-                  >
-                    <Icon name="Trash2" size={16} className="text-red-500" />
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      onClick={() => openEditDialog('condition', item)}
+                      disabled={loading}
+                    >
+                      <Icon name="Pencil" size={16} className="text-blue-600" />
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      onClick={() => handleDeleteItem('condition', item.id)}
+                      disabled={loading}
+                    >
+                      <Icon name="Trash2" size={16} className="text-red-500" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -192,14 +238,24 @@ export default function PabDictionariesPage() {
               {dictionaries.hazards.map((item) => (
                 <div key={item.id} className="p-3 bg-red-50 rounded-lg flex items-center justify-between">
                   <span className="text-sm">{item.name}</span>
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    onClick={() => handleDeleteItem('hazard', item.id)}
-                    disabled={loading}
-                  >
-                    <Icon name="Trash2" size={16} className="text-red-500" />
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      onClick={() => openEditDialog('hazard', item)}
+                      disabled={loading}
+                    >
+                      <Icon name="Pencil" size={16} className="text-blue-600" />
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      onClick={() => handleDeleteItem('hazard', item.id)}
+                      disabled={loading}
+                    >
+                      <Icon name="Trash2" size={16} className="text-red-500" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -210,6 +266,7 @@ export default function PabDictionariesPage() {
           <h3 className="font-semibold mb-2">Инструкция:</h3>
           <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
             <li>Нажмите кнопку "+" чтобы добавить новый элемент в справочник</li>
+            <li>Нажмите кнопку с карандашом чтобы редактировать элемент</li>
             <li>Нажмите кнопку с корзиной чтобы удалить элемент</li>
             <li>Все добавленные элементы появятся в выпадающих списках при регистрации ПАБ</li>
             <li>Изменения сразу доступны всем пользователям</li>
@@ -220,7 +277,7 @@ export default function PabDictionariesPage() {
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Добавить в "{getDictionaryTitle(dialogType)}"</DialogTitle>
+            <DialogTitle>{editingItem ? 'Редактировать' : 'Добавить в'} "{getDictionaryTitle(dialogType)}"</DialogTitle>
           </DialogHeader>
 
           <div className="py-4">
@@ -237,8 +294,12 @@ export default function PabDictionariesPage() {
             <Button variant="outline" onClick={() => setShowDialog(false)}>
               Отмена
             </Button>
-            <Button onClick={handleAddItem} disabled={loading}>
-              {loading ? 'Добавление...' : 'Добавить'}
+            <Button onClick={handleSaveItem} disabled={loading}>
+              {loading ? (
+                editingItem ? 'Сохранение...' : 'Добавление...'
+              ) : (
+                editingItem ? 'Сохранить' : 'Добавить'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
