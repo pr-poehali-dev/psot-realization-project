@@ -1,0 +1,20 @@
+{
+  "tests": [
+    {
+      "name": "Get organization users for select",
+      "method": "GET",
+      "path": "/?organization_id=1",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Missing organization_id parameter",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 400,
+      "expectedBody": {
+        "error": "organization_id required"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

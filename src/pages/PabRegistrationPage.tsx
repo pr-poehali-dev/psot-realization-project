@@ -26,6 +26,13 @@ interface Dictionaries {
   hazards: Array<{ id: number; name: string }>;
 }
 
+interface OrgUser {
+  id: number;
+  fio: string;
+  position: string;
+  subdivision: string;
+}
+
 export default function PabRegistrationPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -34,6 +41,7 @@ export default function PabRegistrationPage() {
     conditions: [],
     hazards: []
   });
+  const [orgUsers, setOrgUsers] = useState<OrgUser[]>([]);
   
   const [docNumber, setDocNumber] = useState('');
   const [docDate, setDocDate] = useState(new Date().toISOString().split('T')[0]);
@@ -76,12 +84,20 @@ export default function PabRegistrationPage() {
 
       // Загрузка данных пользователя
       const userId = localStorage.getItem('userId');
+      const organizationId = localStorage.getItem('organizationId');
       if (userId) {
         const userResponse = await fetch(`https://functions.poehali.dev/1428a44a-2d14-4e76-86e5-7e660fdfba3f?user_id=${userId}`);
         const userData = await userResponse.json();
         setInspectorFio(userData.fio || '');
         setInspectorPosition(userData.position || '');
         setDepartment(userData.department || '');
+      }
+
+      // Загрузка пользователей организации для выбора ответственного
+      if (organizationId) {
+        const usersResponse = await fetch(`https://functions.poehali.dev/7f32d60e-dee5-4b28-901a-10984045d99e?organization_id=${organizationId}`);
+        const usersData = await usersResponse.json();
+        setOrgUsers(usersData);
       }
     } catch (error) {
       toast.error('Ошибка загрузки данных');
@@ -351,9 +367,11 @@ export default function PabRegistrationPage() {
                       <SelectValue placeholder="Выберите из списка" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Ф.И.О. или оставьте пустым">
-                        Ф.И.О. или оставьте пустым
-                      </SelectItem>
+                      {orgUsers.map((user) => (
+                        <SelectItem key={user.id} value={user.fio}>
+                          {user.fio} {user.position && `(${user.position})`}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
