@@ -37,8 +37,17 @@ const Login = () => {
       if (data.success) {
         localStorage.setItem('userId', data.userId);
         localStorage.setItem('userFio', data.fio || fio);
+        localStorage.setItem('userRole', data.role || 'user');
         toast({ title: isRegister ? 'Регистрация успешна!' : 'Вход выполнен!' });
-        navigate('/dashboard');
+        
+        const role = data.role || 'user';
+        if (role === 'superadmin') {
+          navigate('/superadmin');
+        } else if (role === 'admin') {
+          navigate('/admin');
+        } else {
+          navigate('/dashboard');
+        }
       } else {
         toast({ title: 'Ошибка', description: data.error, variant: 'destructive' });
       }

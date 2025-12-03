@@ -43,6 +43,22 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             conn = psycopg2.connect(os.environ['DATABASE_URL'])
             cur = conn.cursor()
             
+            cur.execute("SELECT id FROM users WHERE email = %s", (email,))
+            existing = cur.fetchone()
+            
+            if existing:
+                cur.close()
+                conn.close()
+                return {
+                    'statusCode': 400,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'isBase64Encoded': False,
+                    'body': json.dumps({'success': False, 'error': 'Email already exists'})
+                }
+            
             cur.execute(
                 "INSERT INTO users (email, password_hash, fio, company, subdivision, position) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
                 (email, password_hash, fio, company, subdivision, position)
@@ -79,7 +95,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             cur = conn.cursor()
             
             cur.execute(
-                "SELECT id, fio, company, position FROM users WHERE email = %s AND password_hash = %s",
+                "SELECT id, fio, company, position, role FROM users WHERE email = %s AND password_hash = %s",
                 (email, password_hash)
             )
             result = cur.fetchone()
@@ -100,7 +116,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                         'userId': result[0],
                         'fio': result[1],
                         'company': result[2],
-                        'position': result[3]
+                        'position': result[3],
+                        'role': result[4]
                     })
                 }
             else:

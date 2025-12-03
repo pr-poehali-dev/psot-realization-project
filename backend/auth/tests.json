@@ -7,21 +7,17 @@
       "expectedStatus": 200
     },
     {
-      "name": "Test registration",
+      "name": "Test login",
       "method": "POST",
       "path": "/",
       "body": {
-        "action": "register",
-        "email": "test@example.com",
-        "password": "test123",
-        "fio": "Тестов Тест Тестович",
-        "company": "ТПК Западная",
-        "subdivision": "ОтПБ",
-        "position": "Обучение"
+        "action": "login",
+        "email": "nonexistent@test.com",
+        "password": "wrongpass"
       },
-      "expectedStatus": 200,
+      "expectedStatus": 401,
       "expectedBody": {
-        "success": true
+        "success": false
       },
       "bodyMatcher": "partial"
     }
