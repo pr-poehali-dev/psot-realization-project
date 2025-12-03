@@ -11,6 +11,8 @@ import SuperAdmin from "./pages/SuperAdmin";
 import UsersManagement from "./pages/UsersManagement";
 import CreateUser from "./pages/CreateUser";
 import Profile from "./pages/Profile";
+import AdditionalPage from "./pages/AdditionalPage";
+import StoragePage from "./pages/StoragePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +31,8 @@ const App = () => (
           <Route path="/users-management" element={<UsersManagement />} />
           <Route path="/create-user" element={<CreateUser />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/additional" element={<AdditionalPage />} />
+          <Route path="/storage" element={<StoragePage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

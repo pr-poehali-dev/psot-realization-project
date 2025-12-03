@@ -1,0 +1,30 @@
+{
+  "tests": [
+    {
+      "name": "Get folders for user",
+      "method": "GET",
+      "path": "/?user_id=1",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "folders": "array"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Create new folder",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "action": "create",
+        "user_id": 1,
+        "folder_name": "Тестовая папка"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "folder_id": "number",
+        "message": "string"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
