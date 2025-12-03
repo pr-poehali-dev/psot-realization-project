@@ -195,7 +195,14 @@ const OrganizationsManagementPage = () => {
                     </div>
                   </div>
 
-                  <div className="flex gap-2 ml-4">
+                  <div className="flex flex-col gap-2 ml-4">
+                    <Button
+                      onClick={() => navigate(`/organization-users/${org.id}`)}
+                      className="bg-purple-600 hover:bg-purple-700"
+                    >
+                      <Icon name="Users" size={20} className="mr-2" />
+                      Пользователи
+                    </Button>
                     <Button
                       onClick={() => navigate(`/organization-settings/${org.id}`)}
                       className="bg-blue-600 hover:bg-blue-700"
