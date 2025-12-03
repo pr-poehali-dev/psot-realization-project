@@ -42,6 +42,7 @@ export default function PabRegistrationPage() {
     hazards: []
   });
   const [orgUsers, setOrgUsers] = useState<OrgUser[]>([]);
+  const [subdivisionFilter, setSubdivisionFilter] = useState<string>('');
   
   const [docNumber, setDocNumber] = useState('');
   const [docDate, setDocDate] = useState(new Date().toISOString().split('T')[0]);
@@ -359,21 +360,33 @@ export default function PabRegistrationPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Ответственный за выполнение *</Label>
-                  <Select
-                    value={obs.responsible_person}
-                    onValueChange={(value) => updateObservation(index, 'responsible_person', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Выберите из списка" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {orgUsers.map((user) => (
-                        <SelectItem key={user.id} value={user.fio}>
-                          {user.fio} {user.position && `(${user.position})`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="space-y-2">
+                    <Input
+                      placeholder="Фильтр по подразделению..."
+                      value={subdivisionFilter}
+                      onChange={(e) => setSubdivisionFilter(e.target.value)}
+                    />
+                    <Select
+                      value={obs.responsible_person}
+                      onValueChange={(value) => updateObservation(index, 'responsible_person', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Выберите из списка" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {orgUsers
+                          .filter(user => 
+                            !subdivisionFilter || 
+                            user.subdivision.toLowerCase().includes(subdivisionFilter.toLowerCase())
+                          )
+                          .map((user) => (
+                            <SelectItem key={user.id} value={user.fio}>
+                              {user.fio} {user.subdivision && `[${user.subdivision}]`} {user.position && `(${user.position})`}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 <div>
