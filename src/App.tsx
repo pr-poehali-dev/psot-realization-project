@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import Admin from "./pages/Admin";
 import SuperAdmin from "./pages/SuperAdmin";
 import UsersManagement from "./pages/UsersManagement";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +26,7 @@ const App = () => (
           <Route path="/admin" element={<Admin />} />
           <Route path="/superadmin" element={<SuperAdmin />} />
           <Route path="/users-management" element={<UsersManagement />} />
+          <Route path="/profile" element={<Profile />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

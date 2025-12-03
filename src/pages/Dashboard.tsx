@@ -23,6 +23,7 @@ const Dashboard = () => {
   };
 
   const navigationButtons = [
+    { label: 'Профиль', icon: 'User', color: 'from-purple-500 to-purple-600', route: '/profile' },
     { label: 'Регистрация ПАБ', icon: 'FileText', color: 'from-red-500 to-red-600', route: '/pab-registration' },
     { label: 'Графики', icon: 'BarChart3', color: 'from-blue-500 to-blue-600', route: '/charts' },
     { label: 'Производственный контроль', icon: 'Shield', color: 'from-red-600 to-red-700', route: '/production-control' },
