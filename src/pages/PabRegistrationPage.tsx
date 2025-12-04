@@ -220,8 +220,8 @@ export default function PabRegistrationPage() {
               <Label>ФИО проверяющего *</Label>
               <Input
                 value={inspectorFio}
-                onChange={(e) => setInspectorFio(e.target.value)}
-                placeholder="УЧЕБНЫЙ"
+                disabled
+                className="bg-gray-50"
               />
             </div>
           </div>
@@ -403,9 +403,8 @@ export default function PabRegistrationPage() {
 
           {observations.length < 3 && (
             <Button
-              variant="outline"
               onClick={addObservation}
-              className="mb-6 w-full"
+              className="mb-6 w-full bg-blue-600 hover:bg-blue-700 text-white"
             >
               Добавить наблюдение {observations.length + 1}
             </Button>
