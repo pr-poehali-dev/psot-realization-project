@@ -118,7 +118,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 print(f"[AUTH DEBUG] User NOT found in DB")
             
             cur.execute(
-                "SELECT id, fio, company, position, role FROM users WHERE email = %s AND password_hash = %s",
+                "SELECT id, fio, company, position, role, organization_id FROM users WHERE email = %s AND password_hash = %s",
                 (email, password_hash)
             )
             result = cur.fetchone()
@@ -141,7 +141,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                         'fio': result[1],
                         'company': result[2],
                         'position': result[3],
-                        'role': result[4]
+                        'role': result[4],
+                        'organizationId': result[5]
                     })
                 }
             else:

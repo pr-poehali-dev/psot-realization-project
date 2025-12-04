@@ -44,6 +44,9 @@ const Login = () => {
         localStorage.setItem('userId', data.userId);
         localStorage.setItem('userFio', data.fio || fio);
         localStorage.setItem('userRole', data.role || 'user');
+        if (data.organizationId) {
+          localStorage.setItem('organizationId', data.organizationId);
+        }
         toast({ title: isRegister ? 'Регистрация успешна!' : 'Вход выполнен!' });
         
         const role = data.role || 'user';
