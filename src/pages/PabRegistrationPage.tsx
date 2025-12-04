@@ -87,11 +87,13 @@ export default function PabRegistrationPage() {
       const userId = localStorage.getItem('userId');
       const organizationId = localStorage.getItem('organizationId');
       if (userId) {
-        const userResponse = await fetch(`https://functions.poehali.dev/1428a44a-2d14-4e76-86e5-7e660fdfba3f?user_id=${userId}`);
+        const userResponse = await fetch(`https://functions.poehali.dev/1428a44a-2d14-4e76-86e5-7e660fdfba3f?userId=${userId}`);
         const userData = await userResponse.json();
-        setInspectorFio(userData.fio || '');
-        setInspectorPosition(userData.position || '');
-        setDepartment(userData.department || '');
+        if (userData.success && userData.user) {
+          setInspectorFio(userData.user.fio || '');
+          setInspectorPosition(userData.user.position || '');
+          setDepartment(userData.user.subdivision || '');
+        }
       }
 
       // Загрузка пользователей организации для выбора ответственного
