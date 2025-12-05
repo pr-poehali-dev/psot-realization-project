@@ -18,7 +18,7 @@ export async function uploadDocumentToStorage({
 
   let departmentFolderId;
   const departmentFolder = foldersData.folders?.find(
-    (f: any) => f.folder_name === department
+    (f: any) => f.folder_name === department && f.parent_id === null
   );
 
   if (departmentFolder) {
