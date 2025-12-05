@@ -7,16 +7,14 @@ import { Label } from '@/components/ui/label';
 import Icon from '@/components/ui/icon';
 import { toast } from 'sonner';
 
-interface SubscriptionPlan {
+interface TariffPlan {
   id: number;
   name: string;
+  description: string;
   price: number;
-  trial_days: number;
-  max_users: number;
-  features: {
-    modules: string[];
-    storage_gb: number;
-  };
+  is_active: boolean;
+  is_default: boolean;
+  module_count: number;
 }
 
 interface LogoTemplate {
@@ -31,7 +29,7 @@ const CreateOrganizationPage = () => {
   const navigate = useNavigate();
   const [name, setName] = useState('');
   const [selectedPlan, setSelectedPlan] = useState<number | null>(null);
-  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
+  const [tariffs, setTariffs] = useState<TariffPlan[]>([]);
   const [loading, setLoading] = useState(false);
   const [logoTemplates, setLogoTemplates] = useState<LogoTemplate[]>([]);
   const [selectedLogo, setSelectedLogo] = useState<string | null>(null);
@@ -45,16 +43,16 @@ const CreateOrganizationPage = () => {
       navigate('/');
       return;
     }
-    loadPlans();
+    loadTariffs();
     loadLogoTemplates();
   }, [navigate]);
 
-  const loadPlans = async () => {
+  const loadTariffs = async () => {
     try {
-      const response = await fetch('https://functions.poehali.dev/74e617c7-d1e0-48d6-a5a6-0d25d554958e');
+      const response = await fetch('https://functions.poehali.dev/78e6bfda-487d-4a51-a368-1870e67aba1a');
       if (!response.ok) throw new Error('Failed to load');
       const data = await response.json();
-      setPlans(data);
+      setTariffs(data.filter((t: TariffPlan) => t.is_active));
     } catch (error) {
       toast.error('Не удалось загрузить тарифные планы');
       console.error(error);
@@ -170,7 +168,7 @@ const CreateOrganizationPage = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name,
-          subscription_plan_id: selectedPlan,
+          tariff_plan_id: selectedPlan,
           logo_url: logoUrl
         })
       });
@@ -375,51 +373,44 @@ const CreateOrganizationPage = () => {
 
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-white mb-4">Выберите тарифный план</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {plans.map((plan) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {tariffs.map((tariff) => (
                 <Card
-                  key={plan.id}
-                  onClick={() => setSelectedPlan(plan.id)}
+                  key={tariff.id}
+                  onClick={() => setSelectedPlan(tariff.id)}
                   className={`cursor-pointer transition-all p-6 ${
-                    selectedPlan === plan.id
+                    selectedPlan === tariff.id
                       ? 'bg-gradient-to-br from-blue-600/30 to-purple-600/30 border-blue-500 scale-105'
                       : 'bg-slate-800/50 border-purple-600/30 hover:border-purple-600'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xl font-bold text-white">{plan.name}</h3>
-                    {selectedPlan === plan.id && (
+                    <h3 className="text-xl font-bold text-white">{tariff.name}</h3>
+                    {selectedPlan === tariff.id && (
                       <Icon name="CheckCircle2" size={24} className="text-green-400" />
                     )}
                   </div>
 
+                  {tariff.is_default && (
+                    <div className="mb-2">
+                      <span className="px-2 py-1 bg-green-600/30 text-green-400 text-xs rounded">
+                        По умолчанию
+                      </span>
+                    </div>
+                  )}
+
                   <div className="text-3xl font-bold text-white mb-2">
-                    {plan.price === 0 ? 'Бесплатно' : `${plan.price} ₽`}
+                    {tariff.price === 0 ? 'Бесплатно' : `${tariff.price} ₽/мес`}
                   </div>
 
-                  <div className="space-y-2 text-sm text-gray-300 mb-4">
-                    <div className="flex items-center gap-2">
-                      <Icon name="Calendar" size={16} className="text-purple-400" />
-                      <span>Пробный период: {plan.trial_days} дней</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Icon name="Users" size={16} className="text-purple-400" />
-                      <span>До {plan.max_users} пользователей</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Icon name="HardDrive" size={16} className="text-purple-400" />
-                      <span>{plan.features.storage_gb} ГБ хранилища</span>
-                    </div>
-                  </div>
+                  <p className="text-sm text-gray-300 mb-4">
+                    {tariff.description}
+                  </p>
 
                   <div className="border-t border-purple-600/30 pt-3">
-                    <div className="text-xs text-gray-400 mb-2">Модули:</div>
-                    <div className="flex flex-wrap gap-1">
-                      {plan.features.modules.map((module, idx) => (
-                        <span key={idx} className="px-2 py-1 bg-purple-600/20 text-purple-300 rounded text-xs">
-                          {module}
-                        </span>
-                      ))}
+                    <div className="flex items-center gap-2 text-sm text-purple-400">
+                      <Icon name="Package" size={16} />
+                      <span>{tariff.module_count} модулей в тарифе</span>
                     </div>
                   </div>
                 </Card>

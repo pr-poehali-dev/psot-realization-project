@@ -133,6 +133,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     elif method == 'POST':
         body = json.loads(event.get('body', '{}'))
         name = body.get('name')
+        tariff_plan_id = body.get('tariff_plan_id')
         subscription_plan_id = body.get('subscription_plan_id')
         logo_url = body.get('logo_url')
         
@@ -152,7 +153,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         subscription_type = 'free'
         
         if subscription_plan_id:
-            cur.execute('SELECT trial_days, name FROM subscription_plans WHERE id = %s', (subscription_plan_id,))
+            cur.execute('SELECT trial_days, name FROM t_p80499285_psot_realization_pro.subscription_plans WHERE id = %s', (subscription_plan_id,))
             plan = cur.fetchone()
             if plan:
                 trial_days, plan_name = plan
@@ -160,12 +161,21 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 subscription_type = plan_name
         
         cur.execute('''
-            INSERT INTO organizations (name, registration_code, trial_end_date, subscription_type, logo_url)
-            VALUES (%s, %s, %s, %s, %s)
+            INSERT INTO t_p80499285_psot_realization_pro.organizations (name, registration_code, trial_end_date, subscription_type, logo_url, tariff_plan_id)
+            VALUES (%s, %s, %s, %s, %s, %s)
             RETURNING id
-        ''', (name, registration_code, trial_end_date, subscription_type, logo_url))
+        ''', (name, registration_code, trial_end_date, subscription_type, logo_url, tariff_plan_id))
         
         org_id = cur.fetchone()[0]
+        
+        if tariff_plan_id:
+            cur.execute('''
+                INSERT INTO t_p80499285_psot_realization_pro.organization_modules (organization_id, module_id, is_enabled)
+                SELECT %s, tm.module_id, true
+                FROM t_p80499285_psot_realization_pro.tariff_modules tm
+                WHERE tm.tariff_id = %s
+            ''', (org_id, tariff_plan_id))
+        
         conn.commit()
         cur.close()
         conn.close()

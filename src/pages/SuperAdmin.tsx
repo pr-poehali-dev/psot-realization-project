@@ -24,7 +24,8 @@ const SuperAdmin = () => {
 
   const adminButtons = [
     { label: 'Управление предприятиями', icon: 'Building2', color: 'from-blue-500 to-blue-600', route: '/organizations-management' },
-    { label: 'Настройка тарифных планов', icon: 'CreditCard', color: 'from-green-500 to-emerald-600', route: '/subscription-plans' },
+    { label: 'Управление тарифами и модулями', icon: 'Package', color: 'from-green-500 to-emerald-600', route: '/tariff-management' },
+    { label: 'Настройка подписок (старые)', icon: 'CreditCard', color: 'from-green-500 to-emerald-600', route: '/subscription-plans' },
     { label: 'Управление пользователями', icon: 'Users', color: 'from-purple-500 to-purple-600', route: '/users-management' },
     { label: 'Управление администраторами', icon: 'UserCog', color: 'from-indigo-500 to-indigo-600', route: '/admins-management' },
     { label: 'Системные настройки', icon: 'Settings', color: 'from-slate-500 to-slate-600', route: '/system-settings' },

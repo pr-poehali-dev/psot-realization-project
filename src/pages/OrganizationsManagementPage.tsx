@@ -214,6 +214,13 @@ const OrganizationsManagementPage = () => {
                       Пользователи
                     </Button>
                     <Button
+                      onClick={() => navigate(`/organization-modules/${org.id}`)}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      <Icon name="Package" size={20} className="mr-2" />
+                      Модули
+                    </Button>
+                    <Button
                       onClick={() => navigate(`/organization-settings/${org.id}`)}
                       className="bg-blue-600 hover:bg-blue-700"
                     >

@@ -1,4 +1,7 @@
 {
+  "modules": "https://functions.poehali.dev/f0017dad-45ab-4a18-a80f-50544a6a298f",
+  "tariffs": "https://functions.poehali.dev/78e6bfda-487d-4a51-a368-1870e67aba1a",
+  "organization-modules": "https://functions.poehali.dev/ed581da1-7f08-4cc4-bfed-44137839b869",
   "points-rules": "https://functions.poehali.dev/c250cb0e-130b-4d0b-8980-cc13bad4f6ca",
   "plan-components": "https://functions.poehali.dev/48cabc8b-baa9-4c41-9f08-c1b32cf7ad84",
   "organization-points": "https://functions.poehali.dev/1e66556d-e508-403d-aced-20637779242a",

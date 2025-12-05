@@ -1,0 +1,35 @@
+{
+  "tests": [
+    {
+      "name": "Get all tariff plans",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "0": {
+          "id": "number",
+          "name": "string",
+          "module_count": "number"
+        }
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Create new tariff",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "name": "Тестовый тариф",
+        "description": "Тест",
+        "price": 1000,
+        "module_ids": []
+      },
+      "expectedStatus": 201,
+      "expectedBody": {
+        "id": "number",
+        "name": "string"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
