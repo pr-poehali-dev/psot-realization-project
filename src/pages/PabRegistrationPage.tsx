@@ -133,7 +133,7 @@ export default function PabRegistrationPage() {
   };
 
   const handleSubmit = async () => {
-    if (!docNumber || !inspectorFio || observations.some(o => !o.description || !o.measures)) {
+    if (!inspectorFio || observations.some(o => !o.description || !o.measures)) {
       toast.error('Заполните все обязательные поля');
       return;
     }
@@ -154,6 +154,10 @@ export default function PabRegistrationPage() {
         return;
       }
       
+      const numberResponse = await fetch('https://functions.poehali.dev/c04242d9-b386-407e-bb84-10d219a16e97');
+      const numberData = await numberResponse.json();
+      const newDocNumber = numberData.doc_number;
+      
       let photoUrl = '';
       
       if (photoFile && userId) {
@@ -170,7 +174,7 @@ export default function PabRegistrationPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          doc_number: docNumber,
+          doc_number: newDocNumber,
           doc_date: docDate,
           inspector_fio: inspectorFio,
           inspector_position: inspectorPosition,
@@ -203,7 +207,7 @@ export default function PabRegistrationPage() {
       }
 
       const pabData = {
-        doc_number: docNumber,
+        doc_number: newDocNumber,
         doc_date: docDate,
         inspector_fio: inspectorFio,
         inspector_position: inspectorPosition,
@@ -215,7 +219,7 @@ export default function PabRegistrationPage() {
       
       const doc = generatePabDocument(pabData);
       const blob = await Packer.toBlob(doc);
-      const wordFile = new File([blob], `ПАБ_${docNumber}_${new Date().toISOString().split('T')[0]}.docx`, {
+      const wordFile = new File([blob], `ПАБ_${newDocNumber}_${new Date().toISOString().split('T')[0]}.docx`, {
         type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
       });
       
