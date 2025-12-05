@@ -80,10 +80,16 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                         'isBase64Encoded': False
                     }
                 
-                cur.execute('''
-                    SELECT id FROM storage_folders 
-                    WHERE user_id = %s AND folder_name = %s AND (parent_id = %s OR (parent_id IS NULL AND %s IS NULL))
-                ''', (user_id, folder_name, parent_id, parent_id))
+                if parent_id:
+                    cur.execute('''
+                        SELECT id FROM storage_folders 
+                        WHERE user_id = %s AND folder_name = %s AND parent_id = %s
+                    ''', (user_id, folder_name, parent_id))
+                else:
+                    cur.execute('''
+                        SELECT id FROM storage_folders 
+                        WHERE user_id = %s AND folder_name = %s AND parent_id IS NULL
+                    ''', (user_id, folder_name))
                 
                 existing = cur.fetchone()
                 if existing:
@@ -110,12 +116,33 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                         'body': json.dumps({'folder_id': folder_id, 'message': 'Папка создана'}),
                         'isBase64Encoded': False
                     }
-                except psycopg2.IntegrityError:
+                except psycopg2.IntegrityError as e:
                     conn.rollback()
+                    
+                    if parent_id:
+                        cur.execute('''
+                            SELECT id FROM storage_folders 
+                            WHERE user_id = %s AND folder_name = %s AND parent_id = %s
+                        ''', (user_id, folder_name, parent_id))
+                    else:
+                        cur.execute('''
+                            SELECT id FROM storage_folders 
+                            WHERE user_id = %s AND folder_name = %s AND parent_id IS NULL
+                        ''', (user_id, folder_name))
+                    
+                    existing_after_error = cur.fetchone()
+                    if existing_after_error:
+                        return {
+                            'statusCode': 200,
+                            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                            'body': json.dumps({'folder_id': existing_after_error[0], 'message': 'Папка уже существует'}),
+                            'isBase64Encoded': False
+                        }
+                    
                     return {
                         'statusCode': 409,
                         'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                        'body': json.dumps({'error': 'Папка с таким именем уже существует'}),
+                        'body': json.dumps({'error': f'Ошибка создания папки: {str(e)}'}),
                         'isBase64Encoded': False
                     }
             
