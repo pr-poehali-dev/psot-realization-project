@@ -56,9 +56,14 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             conn = psycopg2.connect(os.environ['DATABASE_URL'])
             cur = conn.cursor()
             
+            email_escaped = email.replace("'", "''")
+            code_escaped = code.replace("'", "''") if code else ''
+            fio_escaped = fio.replace("'", "''")
+            password_hash_escaped = password_hash.replace("'", "''")
+            
             organization_id = None
             if code:
-                cur.execute("SELECT id, name FROM t_p80499285_psot_realization_pro.organizations WHERE registration_code = %s", (code,))
+                cur.execute(f"SELECT id, name FROM t_p80499285_psot_realization_pro.organizations WHERE registration_code = '{code_escaped}'")
                 org_result = cur.fetchone()
                 if org_result:
                     organization_id = org_result[0]
@@ -76,7 +81,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                         'body': json.dumps({'success': False, 'error': 'Invalid registration code'})
                     }
             
-            cur.execute("SELECT id FROM t_p80499285_psot_realization_pro.users WHERE email = %s", (email,))
+            cur.execute(f"SELECT id FROM t_p80499285_psot_realization_pro.users WHERE email = '{email_escaped}'")
             existing = cur.fetchone()
             
             if existing:
@@ -92,15 +97,22 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'body': json.dumps({'success': False, 'error': 'Email already exists'})
                 }
             
+            company_escaped = company.replace("'", "''") if company else ''
+            subdivision_escaped = subdivision.replace("'", "''") if subdivision else ''
+            position_escaped = position.replace("'", "''") if position else ''
+            
+            org_id_sql = str(organization_id) if organization_id else 'NULL'
+            company_sql = f"'{company_escaped}'" if company else 'NULL'
+            subdivision_sql = f"'{subdivision_escaped}'" if subdivision else 'NULL'
+            position_sql = f"'{position_escaped}'" if position else 'NULL'
+            
             cur.execute(
-                "INSERT INTO t_p80499285_psot_realization_pro.users (email, password_hash, fio, company, subdivision, position, organization_id, role) VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
-                (email, password_hash, fio, company, subdivision, position, organization_id, 'user')
+                f"INSERT INTO t_p80499285_psot_realization_pro.users (email, password_hash, fio, company, subdivision, position, organization_id, role) VALUES ('{email_escaped}', '{password_hash_escaped}', '{fio_escaped}', {company_sql}, {subdivision_sql}, {position_sql}, {org_id_sql}, 'user') RETURNING id"
             )
             user_id = cur.fetchone()[0]
             
             cur.execute(
-                "INSERT INTO t_p80499285_psot_realization_pro.user_stats (user_id) VALUES (%s)",
-                (user_id,)
+                f"INSERT INTO t_p80499285_psot_realization_pro.user_stats (user_id) VALUES ({user_id})"
             )
             
             conn.commit()
