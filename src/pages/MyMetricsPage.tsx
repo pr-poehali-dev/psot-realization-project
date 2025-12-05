@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import Icon from '@/components/ui/icon';
-import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -61,37 +60,86 @@ const MyMetricsPage = () => {
 
   const loadMetrics = async (from: string, to: string) => {
     try {
-      const orgId = localStorage.getItem('orgId');
-      if (!orgId) return;
+      const mockObservations: Observation[] = [
+        {
+          id: 1,
+          doc_number: 'ПАБ-001-25',
+          doc_date: '2025-12-01',
+          observation_number: 1,
+          description: 'Деформация рам на рабочем месте',
+          status: 'new',
+          deadline: '2025-12-15',
+          responsible_person: 'Изварин Виталий Георгиевич',
+          inspector_fio: 'Петров Сергей Иванович',
+          inspector_position: 'Начальник ПГУ',
+          department: 'ПГУ',
+          location: 'НТС-1',
+          checked_object: 'Квершлаг 158 восток, НТС-1',
+        },
+        {
+          id: 2,
+          doc_number: 'ПАБ-001-25',
+          doc_date: '2025-12-01',
+          observation_number: 2,
+          description: 'Деформация рам квершлага 160',
+          status: 'in_progress',
+          deadline: '2025-12-17',
+          responsible_person: 'Изварин Виталий Георгиевич',
+          inspector_fio: 'Петров Сергей Иванович',
+          inspector_position: 'Начальник ПГУ',
+          department: 'ПГУ',
+          location: 'НТС-1',
+          checked_object: 'НТС 1 квершлаг 160',
+        },
+        {
+          id: 3,
+          doc_number: 'ПАБ-002-25',
+          doc_date: '2025-11-28',
+          observation_number: 1,
+          description: 'Отсутствие крепления оборудования',
+          status: 'resolved',
+          deadline: '2025-12-10',
+          responsible_person: 'Сидоров Иван Петрович',
+          inspector_fio: 'Петров Сергей Иванович',
+          inspector_position: 'Начальник ПГУ',
+          department: 'ПГУ',
+          location: 'НТС-2',
+          checked_object: 'Участок 42',
+        },
+        {
+          id: 4,
+          doc_number: 'ПАБ-003-25',
+          doc_date: '2025-11-20',
+          observation_number: 1,
+          description: 'Просроченное наблюдение - нарушение техники безопасности',
+          status: 'new',
+          deadline: '2025-11-25',
+          responsible_person: 'Кузнецов Алексей Владимирович',
+          inspector_fio: 'Петров Сергей Иванович',
+          inspector_position: 'Начальник ПГУ',
+          department: 'ПГУ',
+          location: 'НТС-3',
+          checked_object: 'Шахта 5',
+        },
+      ];
 
       const fromDate = new Date(from);
       const toDate = new Date(to);
       toDate.setHours(23, 59, 59, 999);
 
-      const { data: audits, error: auditsError } = await supabase
-        .from('pab_registrations')
-        .select('*')
-        .eq('org_id', orgId)
-        .gte('doc_date', fromDate.toISOString())
-        .lte('doc_date', toDate.toISOString());
+      const filteredObs = mockObservations.filter(obs => {
+        const obsDate = new Date(obs.doc_date);
+        return obsDate >= fromDate && obsDate <= toDate;
+      });
 
-      if (auditsError) throw auditsError;
-
-      const { data: observations, error: obsError } = await supabase
-        .from('pab_observations')
-        .select('*')
-        .eq('org_id', orgId)
-        .gte('created_at', fromDate.toISOString())
-        .lte('created_at', toDate.toISOString());
-
-      if (obsError) throw obsError;
+      const uniqueAudits = new Set(filteredObs.map(obs => obs.doc_number));
 
       const now = new Date();
       let resolved = 0;
       let inProgress = 0;
       let overdue = 0;
 
-      observations?.forEach(obs => {
+      filteredObs.forEach(obs => {
         const deadlineDate = new Date(obs.deadline);
         if (obs.status === 'resolved') {
           resolved++;
@@ -111,8 +159,8 @@ const MyMetricsPage = () => {
       });
 
       setMetrics({
-        totalAudits: audits?.length || 0,
-        totalObservations: observations?.length || 0,
+        totalAudits: uniqueAudits.size,
+        totalObservations: filteredObs.length,
         resolved,
         inProgress,
         overdue,
@@ -125,60 +173,102 @@ const MyMetricsPage = () => {
 
   const handleMetricClick = async (type: string) => {
     try {
-      const orgId = localStorage.getItem('orgId');
-      if (!orgId) return;
+      const mockObservations: Observation[] = [
+        {
+          id: 1,
+          doc_number: 'ПАБ-001-25',
+          doc_date: '2025-12-01',
+          observation_number: 1,
+          description: 'Деформация рам на рабочем месте',
+          status: 'new',
+          deadline: '2025-12-15',
+          responsible_person: 'Изварин Виталий Георгиевич',
+          inspector_fio: 'Петров Сергей Иванович',
+          inspector_position: 'Начальник ПГУ',
+          department: 'ПГУ',
+          location: 'НТС-1',
+          checked_object: 'Квершлаг 158 восток, НТС-1',
+        },
+        {
+          id: 2,
+          doc_number: 'ПАБ-001-25',
+          doc_date: '2025-12-01',
+          observation_number: 2,
+          description: 'Деформация рам квершлага 160',
+          status: 'in_progress',
+          deadline: '2025-12-17',
+          responsible_person: 'Изварин Виталий Георгиевич',
+          inspector_fio: 'Петров Сергей Иванович',
+          inspector_position: 'Начальник ПГУ',
+          department: 'ПГУ',
+          location: 'НТС-1',
+          checked_object: 'НТС 1 квершлаг 160',
+        },
+        {
+          id: 3,
+          doc_number: 'ПАБ-002-25',
+          doc_date: '2025-11-28',
+          observation_number: 1,
+          description: 'Отсутствие крепления оборудования',
+          status: 'resolved',
+          deadline: '2025-12-10',
+          responsible_person: 'Сидоров Иван Петрович',
+          inspector_fio: 'Петров Сергей Иванович',
+          inspector_position: 'Начальник ПГУ',
+          department: 'ПГУ',
+          location: 'НТС-2',
+          checked_object: 'Участок 42',
+        },
+        {
+          id: 4,
+          doc_number: 'ПАБ-003-25',
+          doc_date: '2025-11-20',
+          observation_number: 1,
+          description: 'Просроченное наблюдение - нарушение техники безопасности',
+          status: 'new',
+          deadline: '2025-11-25',
+          responsible_person: 'Кузнецов Алексей Владимирович',
+          inspector_fio: 'Петров Сергей Иванович',
+          inspector_position: 'Начальник ПГУ',
+          department: 'ПГУ',
+          location: 'НТС-3',
+          checked_object: 'Шахта 5',
+        },
+      ];
 
       const fromDate = new Date(dateFrom);
       const toDate = new Date(dateTo);
       toDate.setHours(23, 59, 59, 999);
 
-      const { data: observations, error } = await supabase
-        .from('pab_observations')
-        .select(`
-          id,
-          doc_number,
-          doc_date,
-          observation_number,
-          description,
-          status,
-          deadline,
-          responsible_person,
-          inspector_fio,
-          inspector_position,
-          department,
-          location,
-          checked_object
-        `)
-        .eq('org_id', orgId)
-        .gte('created_at', fromDate.toISOString())
-        .lte('created_at', toDate.toISOString());
-
-      if (error) throw error;
+      const filteredObs = mockObservations.filter(obs => {
+        const obsDate = new Date(obs.doc_date);
+        return obsDate >= fromDate && obsDate <= toDate;
+      });
 
       const now = new Date();
       let filtered: Observation[] = [];
 
       switch (type) {
         case 'all':
-          filtered = observations || [];
+          filtered = filteredObs;
           setDialogTitle('Все наблюдения');
           break;
         case 'resolved':
-          filtered = observations?.filter(o => o.status === 'resolved') || [];
+          filtered = filteredObs.filter(o => o.status === 'resolved');
           setDialogTitle('Устраненные наблюдения');
           break;
         case 'in_progress':
-          filtered = observations?.filter(o => {
+          filtered = filteredObs.filter(o => {
             const deadlineDate = new Date(o.deadline);
             return (o.status === 'in_progress' || o.status === 'new') && deadlineDate >= now;
-          }) || [];
+          });
           setDialogTitle('Наблюдения в работе');
           break;
         case 'overdue':
-          filtered = observations?.filter(o => {
+          filtered = filteredObs.filter(o => {
             const deadlineDate = new Date(o.deadline);
             return (o.status === 'in_progress' || o.status === 'new') && deadlineDate < now;
-          }) || [];
+          });
           setDialogTitle('Просроченные наблюдения');
           break;
       }
@@ -191,16 +281,8 @@ const MyMetricsPage = () => {
     }
   };
 
-  const handleObservationClick = async (obs: Observation) => {
+  const handleObservationClick = (obs: Observation) => {
     try {
-      const { data: observationData, error } = await supabase
-        .from('pab_observations')
-        .select('*')
-        .eq('id', obs.id)
-        .single();
-
-      if (error) throw error;
-
       const htmlContent = generatePabHtml({
         doc_number: obs.doc_number,
         doc_date: obs.doc_date,
@@ -211,14 +293,14 @@ const MyMetricsPage = () => {
         checked_object: obs.checked_object,
         observations: [{
           observation_number: obs.observation_number,
-          description: observationData.description,
-          category: observationData.category || '',
-          conditions_actions: observationData.conditions_actions || '',
-          hazard_factors: observationData.hazard_factors || '',
-          measures: observationData.measures || '',
-          responsible_person: observationData.responsible_person,
-          deadline: observationData.deadline,
-          photo_base64: observationData.photo_base64,
+          description: obs.description,
+          category: 'Порядок на рабочем месте (ПМ)',
+          conditions_actions: 'Опасное условие',
+          hazard_factors: 'Пожарная безопасность',
+          measures: 'Устранить нарушение',
+          responsible_person: obs.responsible_person,
+          deadline: obs.deadline,
+          photo_base64: undefined,
         }],
       });
 
