@@ -19,12 +19,25 @@ interface SubscriptionPlan {
   };
 }
 
+interface LogoTemplate {
+  id: number;
+  name: string;
+  category: string;
+  logo_url: string;
+  preview_url: string;
+}
+
 const CreateOrganizationPage = () => {
   const navigate = useNavigate();
   const [name, setName] = useState('');
   const [selectedPlan, setSelectedPlan] = useState<number | null>(null);
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [loading, setLoading] = useState(false);
+  const [logoTemplates, setLogoTemplates] = useState<LogoTemplate[]>([]);
+  const [selectedLogo, setSelectedLogo] = useState<string | null>(null);
+  const [customLogo, setCustomLogo] = useState<string | null>(null);
+  const [activeLogoTab, setActiveLogoTab] = useState<'templates' | 'upload'>('templates');
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   useEffect(() => {
     const role = localStorage.getItem('userRole');
@@ -33,6 +46,7 @@ const CreateOrganizationPage = () => {
       return;
     }
     loadPlans();
+    loadLogoTemplates();
   }, [navigate]);
 
   const loadPlans = async () => {
@@ -44,6 +58,51 @@ const CreateOrganizationPage = () => {
     } catch (error) {
       toast.error('Не удалось загрузить тарифные планы');
       console.error(error);
+    }
+  };
+
+  const loadLogoTemplates = async () => {
+    try {
+      const response = await fetch('https://functions.poehali.dev/d5352f1d-bdec-44b8-b0b5-34901c6a3245');
+      if (!response.ok) throw new Error('Failed to load');
+      const data = await response.json();
+      setLogoTemplates(data);
+    } catch (error) {
+      console.error('Не удалось загрузить шаблоны логотипов:', error);
+    }
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Можно загружать только изображения');
+      return;
+    }
+
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error('Размер изображения не должен превышать 5 МБ');
+      return;
+    }
+
+    setUploadingLogo(true);
+
+    try {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const base64 = event.target?.result as string;
+        setCustomLogo(base64);
+        setSelectedLogo(null);
+        toast.success('Логотип загружен');
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error(error);
+      toast.error('Ошибка загрузки логотипа');
+    } finally {
+      setUploadingLogo(false);
     }
   };
 
@@ -63,12 +122,15 @@ const CreateOrganizationPage = () => {
     setLoading(true);
 
     try {
+      const logoUrl = customLogo || (selectedLogo ? logoTemplates.find(t => t.logo_url === selectedLogo)?.logo_url : null);
+
       const response = await fetch('https://functions.poehali.dev/5fa1bf89-3c17-4533-889a-7273e1ef1e3b', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name,
-          subscription_plan_id: selectedPlan
+          subscription_plan_id: selectedPlan,
+          logo_url: logoUrl
         })
       });
 
@@ -133,6 +195,136 @@ const CreateOrganizationPage = () => {
                 placeholder="ООО Рога и Копыта"
                 className="bg-slate-700/50 border-purple-600/30 text-white text-lg"
               />
+            </div>
+
+            <div>
+              <Label className="text-white text-lg mb-3 block">
+                Логотип предприятия
+              </Label>
+              
+              <div className="flex gap-4 mb-4">
+                <Button
+                  type="button"
+                  onClick={() => setActiveLogoTab('templates')}
+                  variant={activeLogoTab === 'templates' ? 'default' : 'outline'}
+                  className={activeLogoTab === 'templates' ? 'bg-blue-600 hover:bg-blue-700' : ''}
+                >
+                  <Icon name="Grid3x3" size={18} className="mr-2" />
+                  Из библиотеки
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => setActiveLogoTab('upload')}
+                  variant={activeLogoTab === 'upload' ? 'default' : 'outline'}
+                  className={activeLogoTab === 'upload' ? 'bg-blue-600 hover:bg-blue-700' : ''}
+                >
+                  <Icon name="Upload" size={18} className="mr-2" />
+                  Загрузить свой
+                </Button>
+              </div>
+
+              {activeLogoTab === 'templates' && (
+                <div>
+                  <p className="text-sm text-gray-400 mb-4">
+                    Выберите готовый шаблон логотипа из библиотеки
+                  </p>
+                  <div className="grid grid-cols-4 gap-3 max-h-64 overflow-y-auto">
+                    {logoTemplates.filter(t => t.logo_url !== 'placeholder').map((template) => (
+                      <div
+                        key={template.id}
+                        onClick={() => {
+                          setSelectedLogo(template.logo_url);
+                          setCustomLogo(null);
+                        }}
+                        className={`cursor-pointer p-3 rounded-lg border-2 transition-all hover:scale-105 ${
+                          selectedLogo === template.logo_url
+                            ? 'border-blue-500 bg-blue-600/20'
+                            : 'border-purple-600/30 bg-slate-700/30'
+                        }`}
+                      >
+                        <div className="aspect-square flex items-center justify-center mb-2 bg-white/5 rounded">
+                          <img src={template.logo_url} alt={template.name} className="w-full h-full object-contain" />
+                        </div>
+                        <p className="text-xs text-gray-300 text-center truncate">{template.name}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {activeLogoTab === 'upload' && (
+                <div>
+                  <p className="text-sm text-gray-400 mb-4">
+                    Загрузите свой логотип (рекомендуемый размер: 256x256px, до 5 МБ)
+                  </p>
+                  {customLogo ? (
+                    <div className="flex items-center gap-4">
+                      <div className="relative group">
+                        <img 
+                          src={customLogo} 
+                          alt="Загруженный логотип" 
+                          className="w-32 h-32 object-contain rounded-lg border-2 border-blue-600/30 bg-white/5"
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => setCustomLogo(null)}
+                          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Icon name="Trash2" size={16} />
+                        </Button>
+                      </div>
+                      <div>
+                        <p className="text-sm text-green-400 mb-2">✓ Логотип загружен</p>
+                        <label>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleLogoUpload}
+                            disabled={uploadingLogo}
+                            className="hidden"
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            as="span"
+                            className="cursor-pointer"
+                          >
+                            <Icon name="Upload" size={16} className="mr-2" />
+                            Изменить
+                          </Button>
+                        </label>
+                      </div>
+                    </div>
+                  ) : (
+                    <label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoUpload}
+                        disabled={uploadingLogo}
+                        className="hidden"
+                      />
+                      <div className="border-2 border-dashed border-purple-600/30 rounded-lg p-8 text-center cursor-pointer hover:border-purple-600 transition-colors bg-slate-700/30">
+                        {uploadingLogo ? (
+                          <>
+                            <Icon name="Loader2" size={48} className="mx-auto text-purple-400 mb-3 animate-spin" />
+                            <p className="text-white">Загрузка...</p>
+                          </>
+                        ) : (
+                          <>
+                            <Icon name="Upload" size={48} className="mx-auto text-purple-400 mb-3" />
+                            <p className="text-white mb-1">Нажмите для загрузки</p>
+                            <p className="text-sm text-gray-400">PNG, JPG до 5 МБ</p>
+                          </>
+                        )}
+                      </div>
+                    </label>
+                  )}
+                </div>
+              )}
             </div>
           </Card>
 

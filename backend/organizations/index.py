@@ -134,6 +134,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         body = json.loads(event.get('body', '{}'))
         name = body.get('name')
         subscription_plan_id = body.get('subscription_plan_id')
+        logo_url = body.get('logo_url')
         
         if not name:
             cur.close()
@@ -159,10 +160,10 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 subscription_type = plan_name
         
         cur.execute('''
-            INSERT INTO organizations (name, registration_code, trial_end_date, subscription_type)
-            VALUES (%s, %s, %s, %s)
+            INSERT INTO organizations (name, registration_code, trial_end_date, subscription_type, logo_url)
+            VALUES (%s, %s, %s, %s, %s)
             RETURNING id
-        ''', (name, registration_code, trial_end_date, subscription_type))
+        ''', (name, registration_code, trial_end_date, subscription_type, logo_url))
         
         org_id = cur.fetchone()[0]
         conn.commit()

@@ -92,12 +92,21 @@ const OrganizationsManagementPage = () => {
               <p className="text-purple-400">Всего предприятий: {organizations.length}</p>
             </div>
           </div>
-          <Button
-            onClick={() => navigate('/create-organization')}
-            className="bg-gradient-to-r from-green-600 to-emerald-700"
-          >
-            <Icon name="Plus" size={20} className="mr-2" />
-            Регистрация нового предприятия
+          <div className="flex gap-3">
+            <Button
+              onClick={() => navigate('/logo-library')}
+              variant="outline"
+              className="border-blue-600/50 text-blue-400 hover:bg-blue-600/10"
+            >
+              <Icon name="Image" size={20} className="mr-2" />
+              Библиотека логотипов
+            </Button>
+            <Button
+              onClick={() => navigate('/create-organization')}
+              className="bg-gradient-to-r from-green-600 to-emerald-700"
+            >
+              <Icon name="Plus" size={20} className="mr-2" />
+              Регистрация нового предприятия
           </Button>
         </div>
       </div>
