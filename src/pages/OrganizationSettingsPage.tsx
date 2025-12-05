@@ -39,6 +39,7 @@ const OrganizationSettingsPage = () => {
   const [pages, setPages] = useState<Page[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
 
   useEffect(() => {
     const role = localStorage.getItem('userRole');
@@ -126,9 +127,11 @@ const OrganizationSettingsPage = () => {
     navigate('/');
   };
 
-  const copyToClipboard = (text: string) => {
+  const copyToClipboard = (text: string, type: string) => {
     navigator.clipboard.writeText(text);
-    toast.success('Ссылка скопирована');
+    setCopiedLink(true);
+    toast.success(`${type} скопирована`);
+    setTimeout(() => setCopiedLink(false), 2000);
   };
 
   if (loading) {
@@ -178,24 +181,58 @@ const OrganizationSettingsPage = () => {
 
       <div className="max-w-7xl mx-auto space-y-6">
         <Card className="bg-slate-800/50 border-purple-600/30 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-xl font-semibold text-white mb-2">Информация о предприятии</h3>
-              <div className="space-y-2 text-gray-300">
+          <div>
+            <h3 className="text-xl font-semibold text-white mb-4">Информация о предприятии</h3>
+            <div className="space-y-4 text-gray-300">
+              <div className="grid grid-cols-2 gap-4">
                 <div>Тариф: <span className="font-semibold text-white">{organization.subscription_type}</span></div>
                 <div>Пользователей: <span className="font-semibold text-white">{organization.user_count}</span></div>
-                <div className="flex items-center gap-3">
-                  <span>Код регистрации:</span>
-                  <span className="font-mono font-bold text-green-400">{organization.registration_code}</span>
-                  <Button
-                    size="sm"
-                    onClick={() => copyToClipboard(`${window.location.origin}/register?code=${organization.registration_code}`)}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    <Icon name="Copy" size={16} className="mr-2" />
-                    Скопировать ссылку
-                  </Button>
+              </div>
+              
+              <div className="border-t border-purple-600/30 pt-4">
+                <h4 className="text-lg font-semibold text-white mb-3">Ссылки для входа и регистрации</h4>
+                
+                {/* Ссылка для входа */}
+                <div className="mb-4 p-4 bg-slate-700/50 rounded-lg border border-yellow-600/30">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-yellow-400">Страница входа для сотрудников:</span>
+                    <Button
+                      size="sm"
+                      variant={copiedLink ? "outline" : "default"}
+                      onClick={() => copyToClipboard(`${window.location.origin}/org/${organization.registration_code}`, 'Ссылка для входа')}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      <Icon name={copiedLink ? "Check" : "Copy"} size={16} className="mr-2" />
+                      {copiedLink ? 'Скопировано' : 'Копировать'}
+                    </Button>
+                  </div>
+                  <code className="text-sm text-gray-300 break-all">
+                    {window.location.origin}/org/{organization.registration_code}
+                  </code>
                 </div>
+
+                {/* Ссылка для регистрации */}
+                <div className="p-4 bg-slate-700/50 rounded-lg border border-green-600/30">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-green-400">Ссылка для регистрации новых пользователей:</span>
+                    <Button
+                      size="sm"
+                      onClick={() => copyToClipboard(`${window.location.origin}/register?code=${organization.registration_code}`, 'Ссылка для регистрации')}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      <Icon name="Copy" size={16} className="mr-2" />
+                      Копировать
+                    </Button>
+                  </div>
+                  <code className="text-sm text-gray-300 break-all">
+                    {window.location.origin}/register?code={organization.registration_code}
+                  </code>
+                </div>
+
+                <p className="text-xs text-gray-500 mt-3">
+                  💡 Отправьте эти ссылки сотрудникам предприятия "{organization.name}" для входа в систему АСУБТ
+                </p>
+              </div>
               </div>
             </div>
           </div>

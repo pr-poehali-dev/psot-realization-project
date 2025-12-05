@@ -36,7 +36,41 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     cur = conn.cursor()
     
     if method == 'GET':
-        org_id = event.get('queryStringParameters', {}).get('id')
+        params = event.get('queryStringParameters', {}) or {}
+        org_id = params.get('id')
+        org_code = params.get('code')
+        
+        if org_code:
+            cur.execute('''
+                SELECT o.id, o.name, o.registration_code
+                FROM organizations o
+                WHERE o.registration_code = %s AND o.is_active = true
+            ''', (org_code,))
+            row = cur.fetchone()
+            
+            if row:
+                result = {
+                    'id': row[0],
+                    'name': row[1],
+                    'registration_code': row[2]
+                }
+                cur.close()
+                conn.close()
+                return {
+                    'statusCode': 200,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps(result),
+                    'isBase64Encoded': False
+                }
+            else:
+                cur.close()
+                conn.close()
+                return {
+                    'statusCode': 404,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'error': 'Организация не найдена'}),
+                    'isBase64Encoded': False
+                }
         
         if org_id:
             cur.execute('''
