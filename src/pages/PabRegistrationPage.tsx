@@ -1,15 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Icon from '@/components/ui/icon';
 import { toast } from 'sonner';
 import { generatePabHtml } from '@/utils/generatePabHtml';
 import { uploadDocumentToStorage } from '@/utils/documentUpload';
+import { PabFormHeader } from '@/components/pab/PabFormHeader';
+import { PabObservationForm } from '@/components/pab/PabObservationForm';
+import { PabPhotoGallery } from '@/components/pab/PabPhotoGallery';
+import { PabFormActions } from '@/components/pab/PabFormActions';
 
 interface Observation {
   observation_number: number;
@@ -243,285 +241,99 @@ export default function PabRegistrationPage() {
       };
       
       const htmlContent = generatePabHtml(pabData);
-      const htmlBlob = new Blob([htmlContent], { type: 'text/html' });
-      const htmlFile = new File([htmlBlob], `ПАБ_${newDocNumber}_${new Date().toISOString().split('T')[0]}.html`, {
-        type: 'text/html'
-      });
       
-      if (userId) {
+      const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `ПАБ_${newDocNumber}_${docDate}.html`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      if (organizationId) {
         await uploadDocumentToStorage({
-          userId,
-          department,
-          documentType: 'Регистрация ПАБ',
-          file: htmlFile
+          file: blob,
+          fileName: `ПАБ_${newDocNumber}_${docDate}.html`,
+          organizationId: organizationId,
+          docNumber: newDocNumber,
+          docType: 'pab',
+          docDate: docDate
         });
       }
 
-      toast.success('ПАБ успешно зарегистрирован и отправлен');
-      navigate('/');
+      toast.success('ПАБ успешно сохранен');
+      navigate('/dashboard');
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Неизвестная ошибка';
-      toast.error(`Не удалось сохранить ПАБ: ${errorMessage}`);
-      console.error('ПАБ submission error:', error);
+      console.error('Error:', error);
+      toast.error('Ошибка при сохранении');
     } finally {
       setLoading(false);
     }
   };
 
+  const handlePhotoChange = (index: number, file: File | null) => {
+    const updated = [...photoFiles];
+    updated[index] = file;
+    setPhotoFiles(updated);
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
       <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <Button variant="ghost" onClick={() => navigate('/')}>
-            <Icon name="ArrowLeft" className="mr-2" size={20} />
-            Назад
-          </Button>
+        <div className="flex items-center gap-4 mb-8">
+          <div className="bg-gradient-to-br from-yellow-600 to-yellow-700 p-3 rounded-xl shadow-lg">
+            <Icon name="FileText" size={32} className="text-white" />
+          </div>
+          <h1 className="text-3xl font-bold text-white">Регистрация ПАБ</h1>
         </div>
 
-        <Card className="p-8 bg-white shadow-lg">
-          <h1 className="text-3xl font-bold text-center mb-8">Регистрация ПАБ</h1>
-
-          <div className="grid grid-cols-2 gap-6 mb-6">
-            <div>
-              <Label>Название листа</Label>
-              <Input value={docNumber} disabled className="bg-gray-50" />
-            </div>
-            <div>
-              <Label>Номер документа</Label>
-              <Input value={docNumber} disabled className="bg-gray-50" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-6 mb-6">
-            <div>
-              <Label>Дата *</Label>
-              <Input
-                type="date"
-                value={docDate}
-                onChange={(e) => setDocDate(e.target.value)}
-                className={isFieldFilled(docDate) ? 'bg-green-100' : ''}
-              />
-            </div>
-            <div>
-              <Label>ФИО проверяющего *</Label>
-              <Input
-                value={inspectorFio}
-                disabled
-                className="bg-gray-50"
-              />
-            </div>
-          </div>
-
-          <div className="mb-6">
-            <Label>Должность проверяющего *</Label>
-            <Input
-              value={inspectorPosition}
-              onChange={(e) => setInspectorPosition(e.target.value)}
-              placeholder="Обучение"
-              className={isFieldFilled(inspectorPosition) ? 'bg-green-100' : ''}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-6 mb-6">
-            <div>
-              <Label>Участок *</Label>
-              <Input
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                placeholder="Участок"
-                className={isFieldFilled(location) ? 'bg-green-100' : ''}
-              />
-            </div>
-            <div>
-              <Label>Проверяемый объект *</Label>
-              <Input
-                value={checkedObject}
-                onChange={(e) => setCheckedObject(e.target.value)}
-                className={isFieldFilled(checkedObject) ? 'bg-green-100' : ''}
-              />
-            </div>
-          </div>
-
-          <div className="mb-6">
-            <Label>Подразделение *</Label>
-            <Input
-              value={department}
-              onChange={(e) => setDepartment(e.target.value)}
-              placeholder="Напр. ЗИФ"
-              className={isFieldFilled(department) ? 'bg-green-100' : ''}
-            />
-          </div>
+        <div className="space-y-6">
+          <PabFormHeader
+            docNumber={docNumber}
+            docDate={docDate}
+            inspectorFio={inspectorFio}
+            inspectorPosition={inspectorPosition}
+            location={location}
+            checkedObject={checkedObject}
+            department={department}
+            onDocDateChange={setDocDate}
+            onInspectorFioChange={setInspectorFio}
+            onInspectorPositionChange={setInspectorPosition}
+            onLocationChange={setLocation}
+            onCheckedObjectChange={setCheckedObject}
+            onDepartmentChange={setDepartment}
+            isFieldFilled={isFieldFilled}
+          />
 
           {observations.map((obs, index) => (
-            <Card key={index} className="p-6 mb-6 bg-blue-50">
-              <h2 className="text-xl font-semibold mb-4">
-                Наблюдение №{obs.observation_number} *
-              </h2>
-
-              <div className="mb-4">
-                <Label>Кратко опишите ситуацию... *</Label>
-                <Textarea
-                  value={obs.description}
-                  onChange={(e) => updateObservation(index, 'description', e.target.value)}
-                  placeholder="Кратко опишите ситуацию..."
-                  rows={4}
-                  className={isFieldFilled(obs.description) ? 'bg-green-100' : ''}
-                />
-              </div>
-
-              <div className="mb-4">
-                <Label>Фотография нарушения</Label>
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => updateObservation(index, 'photo_file', e.target.files?.[0] || null)}
-                  className={obs.photo_file ? 'bg-green-200' : ''}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div>
-                  <Label className="text-red-600">Категория наблюдений *</Label>
-                  <Select
-                    value={obs.category}
-                    onValueChange={(value) => updateObservation(index, 'category', value)}
-                  >
-                    <SelectTrigger className={isFieldFilled(obs.category) ? 'bg-green-100' : ''}>
-                      <SelectValue placeholder="-Не выбрано-" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {dictionaries.categories.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.name}>
-                          {cat.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label>Вид условий и действий *</Label>
-                  <Select
-                    value={obs.conditions_actions}
-                    onValueChange={(value) => updateObservation(index, 'conditions_actions', value)}
-                  >
-                    <SelectTrigger className={isFieldFilled(obs.conditions_actions) ? 'bg-green-100' : ''}>
-                      <SelectValue placeholder="-Не выбрано-" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {dictionaries.conditions.map((cond) => (
-                        <SelectItem key={cond.id} value={cond.name}>
-                          {cond.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="mb-4">
-                <Label className="text-red-600">Опасные факторы *</Label>
-                <Select
-                  value={obs.hazard_factors}
-                  onValueChange={(value) => updateObservation(index, 'hazard_factors', value)}
-                >
-                  <SelectTrigger className={isFieldFilled(obs.hazard_factors) ? 'bg-green-100' : ''}>
-                    <SelectValue placeholder="-Не выбрано-" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {dictionaries.hazards.map((haz) => (
-                      <SelectItem key={haz.id} value={haz.name}>
-                        {haz.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="mb-4">
-                <Label>Мероприятия *</Label>
-                <Textarea
-                  value={obs.measures}
-                  onChange={(e) => updateObservation(index, 'measures', e.target.value)}
-                  placeholder="Что нужно сделать..."
-                  rows={4}
-                  className={isFieldFilled(obs.measures) ? 'bg-green-100' : ''}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Ответственный за выполнение *</Label>
-                  <div className="space-y-2">
-                    <Input
-                      placeholder="Фильтр по подразделению..."
-                      value={subdivisionFilter}
-                      onChange={(e) => setSubdivisionFilter(e.target.value)}
-                    />
-                    <Select
-                      value={obs.responsible_person}
-                      onValueChange={(value) => updateObservation(index, 'responsible_person', value)}
-                    >
-                      <SelectTrigger className={isFieldFilled(obs.responsible_person) ? 'bg-green-100' : ''}>
-                        <SelectValue placeholder="Выберите из списка" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {orgUsers
-                          .filter(user => 
-                            !subdivisionFilter || 
-                            user.subdivision.toLowerCase().includes(subdivisionFilter.toLowerCase())
-                          )
-                          .map((user) => (
-                            <SelectItem key={user.id} value={user.fio}>
-                              {user.fio} {user.subdivision && `[${user.subdivision}]`} {user.position && `(${user.position})`}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div>
-                  <Label>Срок *</Label>
-                  <Input
-                    type="date"
-                    value={obs.deadline}
-                    onChange={(e) => updateObservation(index, 'deadline', e.target.value)}
-                    className={isFieldFilled(obs.deadline) ? 'bg-green-100' : ''}
-                  />
-                </div>
-              </div>
-            </Card>
+            <PabObservationForm
+              key={index}
+              observation={obs}
+              index={index}
+              dictionaries={dictionaries}
+              orgUsers={orgUsers}
+              subdivisionFilter={subdivisionFilter}
+              onSubdivisionFilterChange={setSubdivisionFilter}
+              onUpdate={updateObservation}
+              isFieldFilled={isFieldFilled}
+            />
           ))}
 
-          {observations.length < 3 && (
-            <Button
-              onClick={addObservation}
-              className="mb-6 w-full bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              Добавить наблюдение {observations.length + 1}
-            </Button>
-          )}
+          <PabPhotoGallery
+            photoFiles={photoFiles}
+            onPhotoChange={handlePhotoChange}
+          />
 
-          <div className="flex gap-4">
-            <Button variant="outline" onClick={() => navigate('/')}>
-              Назад на главную
-            </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={loading}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {loading ? 'Отправка...' : 'Отправить'}
-            </Button>
-            <Button 
-              variant="outline"
-              onClick={() => window.print()}
-            >
-              Скачать в PDF
-            </Button>
-          </div>
-        </Card>
+          <PabFormActions
+            onBack={() => navigate('/dashboard')}
+            onAddObservation={addObservation}
+            onSubmit={handleSubmit}
+            loading={loading}
+            canAddObservation={observations.length < 3}
+          />
+        </div>
       </div>
     </div>
   );
