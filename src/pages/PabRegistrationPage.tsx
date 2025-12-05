@@ -8,8 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Icon from '@/components/ui/icon';
 import { toast } from 'sonner';
-import { Packer } from 'docx';
-import { generatePabDocument } from '@/utils/generatePabDocument';
+import { generatePabHtml } from '@/utils/generatePabHtml';
 import { uploadDocumentToStorage } from '@/utils/documentUpload';
 
 interface Observation {
@@ -217,10 +216,10 @@ export default function PabRegistrationPage() {
         observations
       };
       
-      const doc = generatePabDocument(pabData);
-      const blob = await Packer.toBlob(doc);
-      const wordFile = new File([blob], `ПАБ_${newDocNumber}_${new Date().toISOString().split('T')[0]}.docx`, {
-        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      const htmlContent = generatePabHtml(pabData);
+      const htmlBlob = new Blob([htmlContent], { type: 'text/html' });
+      const htmlFile = new File([htmlBlob], `ПАБ_${newDocNumber}_${new Date().toISOString().split('T')[0]}.html`, {
+        type: 'text/html'
       });
       
       if (userId) {
@@ -228,7 +227,7 @@ export default function PabRegistrationPage() {
           userId,
           department,
           documentType: 'Регистрация ПАБ',
-          file: wordFile
+          file: htmlFile
         });
       }
 
