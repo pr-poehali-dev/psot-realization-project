@@ -118,6 +118,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     }
                 except psycopg2.IntegrityError as e:
                     conn.rollback()
+                    print(f"[DEBUG] IntegrityError caught: {str(e)}")
+                    print(f"[DEBUG] Looking for existing folder - user_id: {user_id}, folder_name: {folder_name}, parent_id: {parent_id}")
                     
                     if parent_id:
                         cur.execute('''
@@ -131,6 +133,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                         ''', (user_id, folder_name))
                     
                     existing_after_error = cur.fetchone()
+                    print(f"[DEBUG] Found existing folder: {existing_after_error}")
+                    
                     if existing_after_error:
                         return {
                             'statusCode': 200,
@@ -139,6 +143,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                             'isBase64Encoded': False
                         }
                     
+                    print(f"[ERROR] No existing folder found after IntegrityError!")
                     return {
                         'statusCode': 409,
                         'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
