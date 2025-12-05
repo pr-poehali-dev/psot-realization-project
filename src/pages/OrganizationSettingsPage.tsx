@@ -484,24 +484,31 @@ const OrganizationSettingsPage = () => {
                     <p className="text-sm text-gray-400 mb-3">
                       Логотип будет отображаться на странице входа предприятия. Рекомендуемый размер: 256x256px
                     </p>
-                    <label>
+                    <div>
                       <input
                         type="file"
                         accept="image/*"
                         onChange={handleLogoUpload}
                         disabled={uploadingLogo}
                         className="hidden"
+                        id="logo-upload"
                       />
-                      <Button
-                        as="span"
-                        size="sm"
-                        disabled={uploadingLogo}
-                        className="bg-blue-600 hover:bg-blue-700 cursor-pointer"
-                      >
-                        <Icon name={uploadingLogo ? "Loader2" : "Upload"} size={16} className={`mr-2 ${uploadingLogo ? 'animate-spin' : ''}`} />
-                        {uploadingLogo ? 'Загрузка...' : logoPreview ? 'Изменить логотип' : 'Загрузить логотип'}
-                      </Button>
-                    </label>
+                      <label htmlFor="logo-upload">
+                        <Button
+                          type="button"
+                          size="sm"
+                          disabled={uploadingLogo}
+                          className="bg-blue-600 hover:bg-blue-700 cursor-pointer"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            document.getElementById('logo-upload')?.click();
+                          }}
+                        >
+                          <Icon name={uploadingLogo ? "Loader2" : "Upload"} size={16} className={`mr-2 ${uploadingLogo ? 'animate-spin' : ''}`} />
+                          {uploadingLogo ? 'Загрузка...' : logoPreview ? 'Изменить логотип' : 'Загрузить логотип'}
+                        </Button>
+                      </label>
+                    </div>
                   </div>
                 </div>
               </div>

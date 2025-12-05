@@ -318,37 +318,41 @@ const CreateOrganizationPage = () => {
                       </div>
                       <div>
                         <p className="text-sm text-green-400 mb-2">✓ Логотип загружен</p>
-                        <label>
+                        <div>
                           <input
                             type="file"
                             accept="image/*"
                             onChange={handleLogoUpload}
                             disabled={uploadingLogo}
                             className="hidden"
+                            id="logo-change"
                           />
                           <Button
                             type="button"
                             size="sm"
                             variant="outline"
-                            as="span"
                             className="cursor-pointer"
+                            onClick={() => document.getElementById('logo-change')?.click()}
                           >
                             <Icon name="Upload" size={16} className="mr-2" />
                             Изменить
                           </Button>
-                        </label>
+                        </div>
                       </div>
                     </div>
                   ) : (
-                    <label>
+                    <div>
                       <input
                         type="file"
                         accept="image/*"
                         onChange={handleLogoUpload}
                         disabled={uploadingLogo}
                         className="hidden"
+                        id="logo-upload-new"
                       />
-                      <div className="border-2 border-dashed border-purple-600/30 rounded-lg p-8 text-center cursor-pointer hover:border-purple-600 transition-colors bg-slate-700/30">
+                      <div 
+                        onClick={() => !uploadingLogo && document.getElementById('logo-upload-new')?.click()}
+                        className="border-2 border-dashed border-purple-600/30 rounded-lg p-8 text-center cursor-pointer hover:border-purple-600 transition-colors bg-slate-700/30">
                         {uploadingLogo ? (
                           <>
                             <Icon name="Loader2" size={48} className="mx-auto text-purple-400 mb-3 animate-spin" />
@@ -362,7 +366,7 @@ const CreateOrganizationPage = () => {
                           </>
                         )}
                       </div>
-                    </label>
+                    </div>
                   )}
                 </div>
               )}
