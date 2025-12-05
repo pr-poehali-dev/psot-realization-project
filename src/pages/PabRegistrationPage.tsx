@@ -142,9 +142,37 @@ export default function PabRegistrationPage() {
       
       // Загрузка фото, если есть
       if (photoFile) {
+        const userId = localStorage.getItem('userId');
+        
+        // Получаем или создаем папку для ПАБ фотографий
+        let folderId;
+        
+        // Пытаемся найти существующую папку
+        const getFoldersResponse = await fetch(`https://functions.poehali.dev/89ba96e1-c10f-490a-ad91-54a977d9f798?user_id=${userId}`);
+        const foldersData = await getFoldersResponse.json();
+        const existingFolder = foldersData.folders?.find((f: any) => f.folder_name === 'ПАБ - Фото нарушений');
+        
+        if (existingFolder) {
+          folderId = existingFolder.id;
+        } else {
+          // Создаем новую папку
+          const folderResponse = await fetch('https://functions.poehali.dev/89ba96e1-c10f-490a-ad91-54a977d9f798', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'create',
+              user_id: userId,
+              folder_name: 'ПАБ - Фото нарушений'
+            })
+          });
+          const folderData = await folderResponse.json();
+          folderId = folderData.folder_id;
+        }
+        
+        // Загружаем фото
         const formData = new FormData();
         formData.append('file', photoFile);
-        formData.append('folder_id', 'pab-photos');
+        formData.append('folder_id', folderId.toString());
         
         const uploadResponse = await fetch('https://functions.poehali.dev/cbbbbc82-61fa-4061-88d0-900cb586aea6', {
           method: 'POST',

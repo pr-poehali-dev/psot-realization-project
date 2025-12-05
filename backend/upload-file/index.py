@@ -130,7 +130,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             return {
                 'statusCode': 200,
                 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({'file_id': file_id, 'message': 'Файл загружен'}),
+                'body': json.dumps({'file_id': file_id, 'file_url': file_url, 'message': 'Файл загружен'}),
                 'isBase64Encoded': False
             }
         
