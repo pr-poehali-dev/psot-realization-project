@@ -157,14 +157,13 @@ export default function PabRegistrationPage() {
       const numberData = await numberResponse.json();
       const newDocNumber = numberData.doc_number;
       
-      let photoUrl = '';
+      let photoBase64 = '';
       
-      if (photoFile && userId) {
-        photoUrl = await uploadDocumentToStorage({
-          userId,
-          department,
-          documentType: 'Регистрация ПАБ',
-          file: photoFile
+      if (photoFile) {
+        photoBase64 = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(photoFile);
         });
       }
 
@@ -180,7 +179,7 @@ export default function PabRegistrationPage() {
           department,
           location,
           checked_object: checkedObject,
-          photo_url: photoUrl,
+          photo_url: '',
           responsible_email: responsibleEmail,
           observations
         })
@@ -213,6 +212,7 @@ export default function PabRegistrationPage() {
         department,
         location,
         checked_object: checkedObject,
+        photo_base64: photoBase64,
         observations
       };
       

@@ -6,6 +6,7 @@ interface PabData {
   department: string;
   location: string;
   checked_object: string;
+  photo_base64?: string;
   observations: Array<{
     observation_number: number;
     description: string;
@@ -192,6 +193,13 @@ export function generatePabHtml(data: PabData): string {
         <span class="info-value">${data.checked_object}</span>
       </div>
     </div>
+
+    ${data.photo_base64 ? `
+    <div style="margin: 30px 0; text-align: center;">
+      <h3 style="font-size: 12pt; margin-bottom: 15px;">Фотофиксация</h3>
+      <img src="${data.photo_base64}" alt="Фото с места проверки" style="max-width: 100%; max-height: 400px; border: 2px solid #000; border-radius: 4px;" />
+    </div>
+    ` : ''}
 
     <h2 style="text-align: center; font-size: 14pt; margin: 30px 0 15px 0;">Выявленные наблюдения</h2>
 
