@@ -107,7 +107,8 @@ const OrganizationsManagementPage = () => {
             >
               <Icon name="Plus" size={20} className="mr-2" />
               Регистрация нового предприятия
-          </Button>
+            </Button>
+          </div>
         </div>
       </div>
 
