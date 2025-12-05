@@ -4,6 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
+type IconName = 'Shield' | 'PartyPopper' | 'Wallet' | 'Heart' | 'Banknote' | 'Gift' | 'Ticket' | 'Scale' | 'ShieldCheck' | 'FileText' | 'FileCheck' | 'Calendar' | 'BarChart' | 'FileEdit';
+
 interface ContentSectionsProps {
   activeSection: string;
   news: Array<{ title: string; date: string; preview: string; category: string }>;
@@ -167,7 +169,7 @@ export const ContentSections = ({
                   <CardHeader>
                     <div className="flex items-center gap-3">
                       <div className="p-3 bg-primary/10 rounded-lg">
-                        <Icon name={activity.icon as any} className="text-primary" size={28} />
+                        <Icon name={activity.icon as IconName} className="text-primary" size={28} />
                       </div>
                       <CardTitle className="text-xl">{activity.title}</CardTitle>
                     </div>
@@ -238,7 +240,7 @@ export const ContentSections = ({
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div className="p-3 bg-primary/10 rounded-lg">
-                        <Icon name={benefit.icon as any} className="text-primary" size={28} />
+                        <Icon name={benefit.icon as IconName} className="text-primary" size={28} />
                       </div>
                       <span className="text-sm font-semibold text-primary bg-primary/10 px-3 py-1 rounded-full">
                         {benefit.amount}
@@ -300,7 +302,7 @@ export const ContentSections = ({
                     <div className="flex items-center justify-between gap-4">
                       <div className="flex items-center gap-4 flex-1">
                         <div className="p-3 bg-primary/10 rounded-lg">
-                          <Icon name={doc.icon as any} className="text-primary" size={24} />
+                          <Icon name={doc.icon as IconName} className="text-primary" size={24} />
                         </div>
                         <div className="space-y-1 flex-1">
                           <CardTitle className="text-lg">{doc.title}</CardTitle>

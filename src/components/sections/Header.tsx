@@ -2,6 +2,8 @@ import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 
+type NavIconName = 'Home' | 'Info' | 'Newspaper' | 'Briefcase' | 'Gift' | 'FileText' | 'Mail';
+
 interface HeaderProps {
   navigation: Array<{ id: string; label: string; icon: string }>;
   activeSection: string;
@@ -39,7 +41,7 @@ export const Header = ({
                 activeSection === item.id ? 'text-primary' : 'text-muted-foreground'
               }`}
             >
-              <Icon name={item.icon as any} size={16} />
+              <Icon name={item.icon as NavIconName} size={16} />
               {item.label}
             </button>
           ))}
@@ -79,7 +81,7 @@ export const Header = ({
                     activeSection === item.id ? 'text-primary' : 'text-muted-foreground'
                   }`}
                 >
-                  <Icon name={item.icon as any} size={20} />
+                  <Icon name={item.icon as NavIconName} size={20} />
                   {item.label}
                 </button>
               ))}
