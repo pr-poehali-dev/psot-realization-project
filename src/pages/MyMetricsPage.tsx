@@ -546,7 +546,7 @@ const MyMetricsPage = () => {
               </div>
               <div>
                 <p className="text-sm text-slate-400">В работе</p>
-                <p className="text-3xl font-bold text-black">{metrics.inProgress}</p>
+                <p className="text-3xl font-bold text-white">{metrics.inProgress}</p>
               </div>
             </div>
           </Card>
@@ -619,7 +619,7 @@ const MyMetricsPage = () => {
                 </div>
                 <div>
                   <p className="text-sm text-slate-400">В работе</p>
-                  <p className="text-3xl font-bold text-black">{pkMetrics.inProgress}</p>
+                  <p className="text-3xl font-bold text-white">{pkMetrics.inProgress}</p>
                 </div>
               </div>
             </Card>
