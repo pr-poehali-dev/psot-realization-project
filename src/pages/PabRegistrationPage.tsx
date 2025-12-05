@@ -20,6 +20,7 @@ interface Observation {
   measures: string;
   responsible_person: string;
   deadline: string;
+  photo_file?: File | null;
 }
 
 interface Dictionaries {
@@ -53,8 +54,7 @@ export default function PabRegistrationPage() {
   const [location, setLocation] = useState('');
   const [checkedObject, setCheckedObject] = useState('');
   const [department, setDepartment] = useState('');
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [responsibleEmail, setResponsibleEmail] = useState('');
+  const [photoFiles, setPhotoFiles] = useState<(File | null)[]>([null, null, null]);
   
   const [observations, setObservations] = useState<Observation[]>([
     {
@@ -65,7 +65,8 @@ export default function PabRegistrationPage() {
       hazard_factors: '',
       measures: '',
       responsible_person: '',
-      deadline: ''
+      deadline: '',
+      photo_file: null
     }
   ]);
 
@@ -120,26 +121,36 @@ export default function PabRegistrationPage() {
         hazard_factors: '',
         measures: '',
         responsible_person: '',
-        deadline: ''
+        deadline: '',
+        photo_file: null
       }]);
     }
   };
 
-  const updateObservation = (index: number, field: keyof Observation, value: string) => {
+  const updateObservation = (index: number, field: keyof Observation, value: string | File | null) => {
     const updated = [...observations];
     updated[index] = { ...updated[index], [field]: value };
     setObservations(updated);
   };
 
+  const isFieldFilled = (value: any): boolean => {
+    if (typeof value === 'string') return value.trim() !== '';
+    if (value instanceof File) return true;
+    return false;
+  };
+
   const handleSubmit = async () => {
-    if (!inspectorFio || observations.some(o => !o.description || !o.measures)) {
+    if (!docDate || !inspectorFio || !inspectorPosition || !location || !checkedObject || !department) {
       toast.error('Заполните все обязательные поля');
       return;
     }
 
-    if (!department) {
-      toast.error('Выберите подразделение');
-      return;
+    for (const obs of observations) {
+      if (!obs.description || !obs.category || !obs.conditions_actions || 
+          !obs.hazard_factors || !obs.measures || !obs.responsible_person || !obs.deadline) {
+        toast.error('Заполните все обязательные поля в наблюдениях');
+        return;
+      }
     }
 
     setLoading(true);
@@ -157,15 +168,24 @@ export default function PabRegistrationPage() {
       const numberData = await numberResponse.json();
       const newDocNumber = numberData.doc_number;
       
-      let photoBase64 = '';
-      
-      if (photoFile) {
-        photoBase64 = await new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.readAsDataURL(photoFile);
-        });
-      }
+      const photoBase64Array = await Promise.all(
+        observations.map(async (obs) => {
+          if (obs.photo_file) {
+            return new Promise<string>((resolve) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.readAsDataURL(obs.photo_file as File);
+            });
+          }
+          return '';
+        })
+      );
+
+      const userResponse = await fetch(`https://functions.poehali.dev/1428a44a-2d14-4e76-86e5-7e660fdfba3f?userId=${userId}`);
+      const userData = await userResponse.json();
+      const responsibleEmail = userData.user?.email || '';
+
+      const adminEmail = 'admin@example.com';
 
       // Отправка ПАБ
       const response = await fetch('https://functions.poehali.dev/5054985e-ff94-4512-8302-c02f01b09d66', {
@@ -181,6 +201,7 @@ export default function PabRegistrationPage() {
           checked_object: checkedObject,
           photo_url: '',
           responsible_email: responsibleEmail,
+          admin_email: adminEmail,
           observations
         })
       });
@@ -204,6 +225,11 @@ export default function PabRegistrationPage() {
         }
       }
 
+      const observationsWithPhotos = observations.map((obs, index) => ({
+        ...obs,
+        photo_base64: photoBase64Array[index]
+      }));
+
       const pabData = {
         doc_number: newDocNumber,
         doc_date: docDate,
@@ -212,8 +238,8 @@ export default function PabRegistrationPage() {
         department,
         location,
         checked_object: checkedObject,
-        photo_base64: photoBase64,
-        observations
+        photo_base64: photoBase64Array[0] || '',
+        observations: observationsWithPhotos
       };
       
       const htmlContent = generatePabHtml(pabData);
@@ -273,6 +299,7 @@ export default function PabRegistrationPage() {
                 type="date"
                 value={docDate}
                 onChange={(e) => setDocDate(e.target.value)}
+                className={isFieldFilled(docDate) ? 'bg-green-100' : ''}
               />
             </div>
             <div>
@@ -291,6 +318,7 @@ export default function PabRegistrationPage() {
               value={inspectorPosition}
               onChange={(e) => setInspectorPosition(e.target.value)}
               placeholder="Обучение"
+              className={isFieldFilled(inspectorPosition) ? 'bg-green-100' : ''}
             />
           </div>
 
@@ -301,6 +329,7 @@ export default function PabRegistrationPage() {
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 placeholder="Участок"
+                className={isFieldFilled(location) ? 'bg-green-100' : ''}
               />
             </div>
             <div>
@@ -308,27 +337,19 @@ export default function PabRegistrationPage() {
               <Input
                 value={checkedObject}
                 onChange={(e) => setCheckedObject(e.target.value)}
+                className={isFieldFilled(checkedObject) ? 'bg-green-100' : ''}
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-6 mb-6">
-            <div>
-              <Label>Подразделение *</Label>
-              <Input
-                value={department}
-                onChange={(e) => setDepartment(e.target.value)}
-                placeholder="Напр. ЗИФ"
-              />
-            </div>
-            <div>
-              <Label>Фотография нарушения</Label>
-              <Input
-                type="file"
-                accept="image/*"
-                onChange={(e) => setPhotoFile(e.target.files?.[0] || null)}
-              />
-            </div>
+          <div className="mb-6">
+            <Label>Подразделение *</Label>
+            <Input
+              value={department}
+              onChange={(e) => setDepartment(e.target.value)}
+              placeholder="Напр. ЗИФ"
+              className={isFieldFilled(department) ? 'bg-green-100' : ''}
+            />
           </div>
 
           {observations.map((obs, index) => (
@@ -338,12 +359,23 @@ export default function PabRegistrationPage() {
               </h2>
 
               <div className="mb-4">
-                <Label>Кратко опишите ситуацию...</Label>
+                <Label>Кратко опишите ситуацию... *</Label>
                 <Textarea
                   value={obs.description}
                   onChange={(e) => updateObservation(index, 'description', e.target.value)}
                   placeholder="Кратко опишите ситуацию..."
                   rows={4}
+                  className={isFieldFilled(obs.description) ? 'bg-green-100' : ''}
+                />
+              </div>
+
+              <div className="mb-4">
+                <Label>Фотография нарушения</Label>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => updateObservation(index, 'photo_file', e.target.files?.[0] || null)}
+                  className={obs.photo_file ? 'bg-green-200' : ''}
                 />
               </div>
 
@@ -354,7 +386,7 @@ export default function PabRegistrationPage() {
                     value={obs.category}
                     onValueChange={(value) => updateObservation(index, 'category', value)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className={isFieldFilled(obs.category) ? 'bg-green-100' : ''}>
                       <SelectValue placeholder="-Не выбрано-" />
                     </SelectTrigger>
                     <SelectContent>
@@ -373,7 +405,7 @@ export default function PabRegistrationPage() {
                     value={obs.conditions_actions}
                     onValueChange={(value) => updateObservation(index, 'conditions_actions', value)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className={isFieldFilled(obs.conditions_actions) ? 'bg-green-100' : ''}>
                       <SelectValue placeholder="-Не выбрано-" />
                     </SelectTrigger>
                     <SelectContent>
@@ -393,7 +425,7 @@ export default function PabRegistrationPage() {
                   value={obs.hazard_factors}
                   onValueChange={(value) => updateObservation(index, 'hazard_factors', value)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className={isFieldFilled(obs.hazard_factors) ? 'bg-green-100' : ''}>
                     <SelectValue placeholder="-Не выбрано-" />
                   </SelectTrigger>
                   <SelectContent>
@@ -413,6 +445,7 @@ export default function PabRegistrationPage() {
                   onChange={(e) => updateObservation(index, 'measures', e.target.value)}
                   placeholder="Что нужно сделать..."
                   rows={4}
+                  className={isFieldFilled(obs.measures) ? 'bg-green-100' : ''}
                 />
               </div>
 
@@ -429,7 +462,7 @@ export default function PabRegistrationPage() {
                       value={obs.responsible_person}
                       onValueChange={(value) => updateObservation(index, 'responsible_person', value)}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className={isFieldFilled(obs.responsible_person) ? 'bg-green-100' : ''}>
                         <SelectValue placeholder="Выберите из списка" />
                       </SelectTrigger>
                       <SelectContent>
@@ -454,6 +487,7 @@ export default function PabRegistrationPage() {
                     type="date"
                     value={obs.deadline}
                     onChange={(e) => updateObservation(index, 'deadline', e.target.value)}
+                    className={isFieldFilled(obs.deadline) ? 'bg-green-100' : ''}
                   />
                 </div>
               </div>
@@ -469,16 +503,6 @@ export default function PabRegistrationPage() {
             </Button>
           )}
 
-          <div className="mb-6">
-            <Label>Email ответственного</Label>
-            <Input
-              type="email"
-              value={responsibleEmail}
-              onChange={(e) => setResponsibleEmail(e.target.value)}
-              placeholder="email@example.com"
-            />
-          </div>
-
           <div className="flex gap-4">
             <Button variant="outline" onClick={() => navigate('/')}>
               Назад на главную
@@ -490,12 +514,11 @@ export default function PabRegistrationPage() {
             >
               {loading ? 'Отправка...' : 'Отправить'}
             </Button>
-            <Button variant="outline">
+            <Button 
+              variant="outline"
+              onClick={() => window.print()}
+            >
               Скачать в PDF
-            </Button>
-            <Button variant="outline">
-              <Icon name="FileText" className="mr-2" size={16} />
-              Скачать в Word
             </Button>
           </div>
         </Card>

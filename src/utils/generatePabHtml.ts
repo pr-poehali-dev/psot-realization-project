@@ -16,6 +16,7 @@ interface PabData {
     measures: string;
     responsible_person: string;
     deadline: string;
+    photo_base64?: string;
   }>;
 }
 
@@ -31,6 +32,13 @@ export function generatePabHtml(data: PabData): string {
       <td style="border: 1px solid #000; padding: 8px;">${obs.responsible_person}</td>
       <td style="border: 1px solid #000; padding: 8px;">${obs.deadline}</td>
     </tr>
+    ${obs.photo_base64 ? `
+    <tr>
+      <td colspan="8" style="border: 1px solid #000; padding: 8px; text-align: center;">
+        <img src="${obs.photo_base64}" alt="Фото наблюдения ${obs.observation_number}" style="max-width: 100%; max-height: 400px; border-radius: 4px;" />
+      </td>
+    </tr>
+    ` : ''}
   `).join('');
 
   return `<!DOCTYPE html>
