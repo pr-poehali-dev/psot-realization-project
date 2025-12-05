@@ -197,6 +197,41 @@ const UsersManagement = () => {
     }
   };
 
+  const handleExportDecryption = () => {
+    const csvContent = [
+      ['ID№', 'Фамилия', 'Имя', 'Отчество', 'Email', 'Компания', 'Подразделение', 'Должность', 'Роль', 'Дата регистрации'],
+      ...users.map(user => {
+        const fio_parts = user.fio.split(' ');
+        return [
+          user.display_name || `ID№${String(user.id).padStart(5, '0')}`,
+          fio_parts[0] || '',
+          fio_parts[1] || '',
+          fio_parts[2] || '',
+          user.email,
+          user.company || '',
+          user.subdivision || '',
+          user.position || '',
+          getRoleLabel(user.role),
+          new Date(user.created_at).toLocaleDateString('ru-RU')
+        ];
+      })
+    ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Расшифровка_ID_${new Date().toLocaleDateString('ru-RU').replace(/\./g, '-')}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast({ title: 'Файл экспортирован', description: 'Расшифровка ID успешно сохранена' });
+  };
+
   const filteredUsers = users.filter(
     (user) =>
       user.fio.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -245,13 +280,22 @@ const UsersManagement = () => {
             </div>
           </div>
           {isSuperAdmin && (
-            <Button
-              onClick={() => navigate('/create-user')}
-              className="bg-gradient-to-r from-purple-600 to-pink-700 hover:from-purple-700 hover:to-pink-800"
-            >
-              <Icon name="UserPlus" size={20} className="mr-2" />
-              Создать пользователя
-            </Button>
+            <div className="flex gap-3">
+              <Button
+                onClick={() => navigate('/create-user')}
+                className="bg-gradient-to-r from-purple-600 to-pink-700 hover:from-purple-700 hover:to-pink-800"
+              >
+                <Icon name="UserPlus" size={20} className="mr-2" />
+                Создать пользователя
+              </Button>
+              <Button
+                onClick={handleExportDecryption}
+                className="bg-gradient-to-r from-green-600 to-emerald-700 hover:from-green-700 hover:to-emerald-800"
+              >
+                <Icon name="FileDown" size={20} className="mr-2" />
+                Экспорт расшифровки ID
+              </Button>
+            </div>
           )}
         </div>
 
