@@ -1,0 +1,17 @@
+{
+  "tests": [
+    {
+      "name": "Get available component types",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "blocks": "array",
+        "pages": "array",
+        "buttons": "array",
+        "modules": "array"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

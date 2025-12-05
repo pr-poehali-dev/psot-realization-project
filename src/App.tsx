@@ -23,6 +23,8 @@ import CreateOrganizationPage from "./pages/CreateOrganizationPage";
 import OrganizationSettingsPage from "./pages/OrganizationSettingsPage";
 import OrganizationUsersPage from "./pages/OrganizationUsersPage";
 import LogoLibraryPage from "./pages/LogoLibraryPage";
+import SubscriptionPlansPage from "./pages/SubscriptionPlansPage";
+import SubscriptionPlanEditPage from "./pages/SubscriptionPlanEditPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -53,6 +55,8 @@ const App = () => (
           <Route path="/organization-settings/:id" element={<OrganizationSettingsPage />} />
           <Route path="/organization-users/:id" element={<OrganizationUsersPage />} />
           <Route path="/logo-library" element={<LogoLibraryPage />} />
+          <Route path="/subscription-plans" element={<SubscriptionPlansPage />} />
+          <Route path="/subscription-plan/:id" element={<SubscriptionPlanEditPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
