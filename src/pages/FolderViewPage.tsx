@@ -66,15 +66,22 @@ const FolderViewPage = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const maxSize = 50 * 1024 * 1024;
+    const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+    const maxSize = 500 * 1024 * 1024; // 500 МБ
+    
     if (file.size > maxSize) {
-      toast.error('Файл слишком большой. Максимум 50 МБ');
+      toast.error(`Файл слишком большой (${fileSizeMB} МБ). Максимум 500 МБ`);
       return;
     }
 
     try {
       setUploading(true);
       setUploadProgress(0);
+      
+      // Показываем размер файла при начале загрузки
+      if (file.size > 10 * 1024 * 1024) { // Больше 10 МБ
+        toast.info(`Загружаем ${fileSizeMB} МБ, это может занять время...`);
+      }
 
       const formData = new FormData();
       formData.append('file', file);
@@ -91,24 +98,39 @@ const FolderViewPage = () => {
 
       xhr.addEventListener('load', () => {
         if (xhr.status === 200) {
-          toast.success('Файл загружен');
+          const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+          toast.success(`Файл загружен (${fileSizeMB} МБ)`);
           loadFiles();
           if (fileInputRef.current) fileInputRef.current.value = '';
         } else {
-          const error = JSON.parse(xhr.responseText);
-          toast.error(error.error || 'Ошибка загрузки файла');
+          try {
+            const error = JSON.parse(xhr.responseText);
+            toast.error(error.error || 'Ошибка загрузки файла');
+            console.error('Upload error:', error);
+          } catch {
+            toast.error(`Ошибка загрузки: ${xhr.status} ${xhr.statusText}`);
+            console.error('Upload failed:', xhr.responseText);
+          }
         }
         setUploading(false);
         setUploadProgress(0);
       });
 
-      xhr.addEventListener('error', () => {
-        toast.error('Ошибка загрузки файла');
+      xhr.addEventListener('error', (e) => {
+        toast.error('Ошибка сети при загрузке файла');
+        console.error('Network error during upload:', e);
+        setUploading(false);
+        setUploadProgress(0);
+      });
+      
+      xhr.addEventListener('timeout', () => {
+        toast.error('Время загрузки истекло. Попробуйте файл меньшего размера');
         setUploading(false);
         setUploadProgress(0);
       });
 
       xhr.open('POST', 'https://functions.poehali.dev/cbbbbc82-61fa-4061-88d0-900cb586aea6');
+      xhr.timeout = 300000; // 5 минут для больших файлов
       xhr.send(formData);
 
     } catch (error: any) {

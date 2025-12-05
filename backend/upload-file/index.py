@@ -174,8 +174,26 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         file_size = len(file_data)
         file_type = mimetypes.guess_type(file_name)[0] or 'application/octet-stream'
         
+        # Проверка максимального размера (500 МБ)
+        max_file_size = 500 * 1024 * 1024
+        if file_size > max_file_size:
+            return {
+                'statusCode': 413,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': f'Файл слишком большой. Максимум 500 МБ, получено {file_size / (1024*1024):.2f} МБ'}),
+                'isBase64Encoded': False
+            }
+        
         # Создаем data URL для хранения в БД
-        file_url = f'data:{file_type};base64,{base64.b64encode(file_data).decode("utf-8")}'
+        try:
+            file_url = f'data:{file_type};base64,{base64.b64encode(file_data).decode("utf-8")}'
+        except MemoryError:
+            return {
+                'statusCode': 507,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Недостаточно памяти для обработки файла. Попробуйте файл меньшего размера'}),
+                'isBase64Encoded': False
+            }
         
         # Подключаемся к БД
         conn = psycopg2.connect(os.environ['DATABASE_URL'])
