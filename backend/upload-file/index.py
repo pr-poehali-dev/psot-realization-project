@@ -1,11 +1,11 @@
 import json
 import os
-import base64
 import uuid
 import psycopg2
 from typing import Dict, Any
 import mimetypes
-from io import BytesIO
+import boto3
+from botocore.client import Config
 
 def parse_multipart(body: bytes, boundary: str) -> Dict[str, Any]:
     """
@@ -19,19 +19,16 @@ def parse_multipart(body: bytes, boundary: str) -> Dict[str, Any]:
         if not part or part in (b'--\r\n', b'--', b'\r\n'):
             continue
         
-        # Разделяем заголовки и тело
         if b'\r\n\r\n' not in part:
             continue
             
         headers_raw, body_raw = part.split(b'\r\n\r\n', 1)
         
-        # Убираем завершающий \r\n
         if body_raw.endswith(b'\r\n'):
             body_raw = body_raw[:-2]
         
         headers_str = headers_raw.decode('utf-8', errors='ignore')
         
-        # Извлекаем имя поля
         if 'Content-Disposition' not in headers_str:
             continue
             
@@ -40,7 +37,6 @@ def parse_multipart(body: bytes, boundary: str) -> Dict[str, Any]:
         
         for line in headers_str.split('\r\n'):
             if 'Content-Disposition' in line:
-                # Парсим name="..." и filename="..."
                 parts_list = line.split(';')
                 for p in parts_list:
                     p = p.strip()
@@ -51,20 +47,18 @@ def parse_multipart(body: bytes, boundary: str) -> Dict[str, Any]:
         
         if name:
             if filename:
-                # Это файл
                 result[name] = {
                     'filename': filename,
                     'data': body_raw
                 }
             else:
-                # Это обычное поле
                 result[name] = body_raw.decode('utf-8', errors='ignore')
     
     return result
 
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     '''
-    Загрузка файлов в хранилище
+    Загрузка файлов в Cloudflare R2
     POST: Загрузить файл в папку (multipart/form-data)
     '''
     method: str = event.get('httpMethod', 'POST')
@@ -91,6 +85,14 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         }
     
     try:
+        # Проверяем наличие ключей R2
+        r2_access_key = os.environ.get('R2_ACCESS_KEY_ID')
+        r2_secret_key = os.environ.get('R2_SECRET_ACCESS_KEY')
+        r2_bucket = os.environ.get('R2_BUCKET_NAME')
+        r2_account_id = os.environ.get('R2_ACCOUNT_ID')
+        
+        use_r2 = all([r2_access_key, r2_secret_key, r2_bucket, r2_account_id])
+        
         headers = event.get('headers', {})
         content_type = headers.get('content-type') or headers.get('Content-Type', '')
         
@@ -102,7 +104,6 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'isBase64Encoded': False
             }
         
-        # Извлекаем boundary
         if 'boundary=' not in content_type:
             return {
                 'statusCode': 400,
@@ -113,32 +114,22 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         
         boundary = content_type.split('boundary=')[-1].strip()
         
-        # Получаем тело запроса
         body = event.get('body', '')
         is_base64 = event.get('isBase64Encoded', False)
         
         if is_base64:
+            import base64
             body_bytes = base64.b64decode(body)
         else:
             body_bytes = body.encode('latin-1') if isinstance(body, str) else body
         
-        # Парсим multipart
         parsed = parse_multipart(body_bytes, boundary)
         
-        # Отладка
-        print(f"Parsed keys: {list(parsed.keys())}")
-        for key in parsed.keys():
-            if isinstance(parsed[key], dict):
-                print(f"  {key}: file, filename={parsed[key].get('filename')}, size={len(parsed[key].get('data', b''))}")
-            else:
-                print(f"  {key}: {parsed[key][:50] if len(str(parsed[key])) > 50 else parsed[key]}")
-        
-        # Проверяем наличие необходимых полей
         if 'file' not in parsed:
             return {
                 'statusCode': 400,
                 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({'error': 'Отсутствует поле file', 'parsed_keys': list(parsed.keys())}),
+                'body': json.dumps({'error': 'Отсутствует поле file'}),
                 'isBase64Encoded': False
             }
         
@@ -146,7 +137,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             return {
                 'statusCode': 400,
                 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({'error': 'Отсутствует поле folder_id', 'parsed_keys': list(parsed.keys())}),
+                'body': json.dumps({'error': 'Отсутствует поле folder_id'}),
                 'isBase64Encoded': False
             }
         
@@ -174,27 +165,6 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         file_size = len(file_data)
         file_type = mimetypes.guess_type(file_name)[0] or 'application/octet-stream'
         
-        # Проверка максимального размера (500 МБ)
-        max_file_size = 500 * 1024 * 1024
-        if file_size > max_file_size:
-            return {
-                'statusCode': 413,
-                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({'error': f'Файл слишком большой. Максимум 500 МБ, получено {file_size / (1024*1024):.2f} МБ'}),
-                'isBase64Encoded': False
-            }
-        
-        # Создаем data URL для хранения в БД
-        try:
-            file_url = f'data:{file_type};base64,{base64.b64encode(file_data).decode("utf-8")}'
-        except MemoryError:
-            return {
-                'statusCode': 507,
-                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({'error': 'Недостаточно памяти для обработки файла. Попробуйте файл меньшего размера'}),
-                'isBase64Encoded': False
-            }
-        
         # Подключаемся к БД
         conn = psycopg2.connect(os.environ['DATABASE_URL'])
         cur = conn.cursor()
@@ -210,7 +180,65 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'isBase64Encoded': False
                 }
             
-            # Вставляем файл
+            file_url = None
+            
+            # Загружаем в R2, если настроен
+            if use_r2:
+                try:
+                    # Создаём S3 клиент для R2
+                    s3_client = boto3.client(
+                        's3',
+                        endpoint_url=f'https://{r2_account_id}.r2.cloudflarestorage.com',
+                        aws_access_key_id=r2_access_key,
+                        aws_secret_access_key=r2_secret_key,
+                        config=Config(signature_version='s3v4'),
+                        region_name='auto'
+                    )
+                    
+                    # Генерируем уникальное имя файла
+                    file_id = str(uuid.uuid4())
+                    file_extension = os.path.splitext(file_name)[1]
+                    object_key = f'{folder_id}/{file_id}{file_extension}'
+                    
+                    # Загружаем файл в R2
+                    s3_client.put_object(
+                        Bucket=r2_bucket,
+                        Key=object_key,
+                        Body=file_data,
+                        ContentType=file_type,
+                        Metadata={
+                            'original_filename': file_name,
+                            'folder_id': folder_id
+                        }
+                    )
+                    
+                    # Публичный URL файла
+                    file_url = f'https://{r2_bucket}.{r2_account_id}.r2.cloudflarestorage.com/{object_key}'
+                    
+                    print(f'File uploaded to R2: {file_url}')
+                    
+                except Exception as e:
+                    print(f'R2 upload failed, falling back to database: {str(e)}')
+                    use_r2 = False
+            
+            # Fallback: сохраняем в БД если R2 не настроен или упал
+            if not use_r2 or not file_url:
+                # Проверка размера для БД (100 МБ максимум)
+                max_db_size = 100 * 1024 * 1024
+                if file_size > max_db_size:
+                    return {
+                        'statusCode': 413,
+                        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                        'body': json.dumps({
+                            'error': f'Файл слишком большой для БД ({file_size / (1024*1024):.2f} МБ). Настройте R2 для файлов больше 100 МБ'
+                        }),
+                        'isBase64Encoded': False
+                    }
+                
+                import base64
+                file_url = f'data:{file_type};base64,{base64.b64encode(file_data).decode("utf-8")}'
+            
+            # Сохраняем запись в БД
             cur.execute('''
                 INSERT INTO storage_files (folder_id, file_name, file_url, file_size, file_type) 
                 VALUES (%s, %s, %s, %s, %s) 
@@ -220,10 +248,17 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             file_id = cur.fetchone()[0]
             conn.commit()
             
+            storage_type = 'R2' if use_r2 and not file_url.startswith('data:') else 'Database'
+            
             return {
                 'statusCode': 200,
                 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({'file_id': file_id, 'file_url': file_url, 'message': 'Файл загружен'}),
+                'body': json.dumps({
+                    'file_id': file_id,
+                    'file_url': file_url,
+                    'storage_type': storage_type,
+                    'message': f'Файл загружен в {storage_type}'
+                }),
                 'isBase64Encoded': False
             }
         
@@ -238,6 +273,6 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         return {
             'statusCode': 500,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': f'Ошибка загрузки: {str(e)}', 'trace': error_trace}),
+            'body': json.dumps({'error': f'Ошибка загрузки: {str(e)}'}),
             'isBase64Encoded': False
         }

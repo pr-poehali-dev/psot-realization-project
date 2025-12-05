@@ -99,7 +99,14 @@ const FolderViewPage = () => {
       xhr.addEventListener('load', () => {
         if (xhr.status === 200) {
           const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
-          toast.success(`Файл загружен (${fileSizeMB} МБ)`);
+          try {
+            const response = JSON.parse(xhr.responseText);
+            const storageType = response.storage_type || 'Database';
+            const storageIcon = storageType === 'R2' ? '☁️' : '💾';
+            toast.success(`${storageIcon} Файл загружен (${fileSizeMB} МБ) → ${storageType}`);
+          } catch {
+            toast.success(`Файл загружен (${fileSizeMB} МБ)`);
+          }
           loadFiles();
           if (fileInputRef.current) fileInputRef.current.value = '';
         } else {
