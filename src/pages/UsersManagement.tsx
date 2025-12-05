@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import Icon from '@/components/ui/icon';
+import { UsersStatsCards } from '@/components/users/UsersStatsCards';
+import { UsersTableHeader } from '@/components/users/UsersTableHeader';
+import { UserTableRow } from '@/components/users/UserTableRow';
+import { UserEditDialogs } from '@/components/users/UserEditDialogs';
 
 interface User {
   id: number;
@@ -246,14 +246,14 @@ const UsersManagement = () => {
       case 'admin':
         return 'bg-blue-600 text-white';
       default:
-        return 'bg-gray-600 text-white';
+        return 'bg-slate-600 text-white';
     }
   };
 
   const getRoleLabel = (role: string) => {
     switch (role) {
       case 'superadmin':
-        return 'Главный админ';
+        return 'Суперадмин';
       case 'admin':
         return 'Администратор';
       default:
@@ -261,289 +261,102 @@ const UsersManagement = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+        <Icon name="Loader2" size={48} className="text-yellow-500 animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
+      <div className="max-w-[1600px] mx-auto">
+        <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
-            <Button variant="outline" onClick={() => navigate(-1)} className="border-yellow-600/50">
-              <Icon name="ArrowLeft" size={20} />
-            </Button>
-            <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-br from-blue-600 to-cyan-700 p-3 rounded-xl shadow-lg">
-                <Icon name="Users" size={32} className="text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-white">Управление пользователями</h1>
-                <p className="text-blue-400">Всего пользователей: {stats.total_users}</p>
-              </div>
+            <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-3 rounded-xl shadow-lg">
+              <Icon name="Users" size={32} className="text-white" />
             </div>
+            <h1 className="text-3xl font-bold text-white">Управление пользователями</h1>
           </div>
-          {isSuperAdmin && (
-            <div className="flex gap-3">
-              <Button
-                onClick={() => navigate('/create-user')}
-                className="bg-gradient-to-r from-purple-600 to-pink-700 hover:from-purple-700 hover:to-pink-800"
-              >
-                <Icon name="UserPlus" size={20} className="mr-2" />
-                Создать пользователя
-              </Button>
-              <Button
-                onClick={handleExportDecryption}
-                className="bg-gradient-to-r from-green-600 to-emerald-700 hover:from-green-700 hover:to-emerald-800"
-              >
-                <Icon name="FileDown" size={20} className="mr-2" />
-                Экспорт расшифровки ID
-              </Button>
+          <Button
+            onClick={() => navigate('/dashboard')}
+            variant="outline"
+            className="border-yellow-600/50 text-yellow-500 hover:bg-yellow-600/10"
+          >
+            <Icon name="ArrowLeft" size={20} className="mr-2" />
+            Назад
+          </Button>
+        </div>
+
+        <UsersStatsCards stats={stats} />
+
+        <Card className="bg-slate-800/50 border-yellow-600/30 p-6">
+          <UsersTableHeader
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            onExport={handleExportDecryption}
+            isSuperAdmin={isSuperAdmin}
+          />
+
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-slate-700">
+                  <th className="px-4 py-3 text-left text-slate-300 font-semibold">ID</th>
+                  <th className="px-4 py-3 text-left text-slate-300 font-semibold">ФИО</th>
+                  <th className="px-4 py-3 text-left text-slate-300 font-semibold">Email</th>
+                  <th className="px-4 py-3 text-left text-slate-300 font-semibold">Компания</th>
+                  <th className="px-4 py-3 text-left text-slate-300 font-semibold">Подразделение</th>
+                  <th className="px-4 py-3 text-left text-slate-300 font-semibold">Должность</th>
+                  <th className="px-4 py-3 text-left text-slate-300 font-semibold">Роль</th>
+                  <th className="px-4 py-3 text-left text-slate-300 font-semibold">Дата регистрации</th>
+                  <th className="px-4 py-3 text-left text-slate-300 font-semibold">Статистика</th>
+                  <th className="px-4 py-3 text-left text-slate-300 font-semibold">Действия</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredUsers.map((user) => (
+                  <UserTableRow
+                    key={user.id}
+                    user={user}
+                    isSuperAdmin={isSuperAdmin}
+                    onUpdateRole={handleUpdateRole}
+                    onEditProfile={setEditUser}
+                    onEditCredentials={(user) =>
+                      setEditCredentials({
+                        id: user.id,
+                        email: user.email,
+                        newEmail: '',
+                        newPassword: '',
+                      })
+                    }
+                    onDelete={handleDeleteUser}
+                    getRoleBadgeColor={getRoleBadgeColor}
+                    getRoleLabel={getRoleLabel}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {filteredUsers.length === 0 && (
+            <div className="text-center py-12">
+              <Icon name="Users" size={64} className="text-slate-600 mx-auto mb-4" />
+              <p className="text-slate-400 text-lg">Пользователи не найдены</p>
             </div>
           )}
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <Card className="bg-slate-800/50 border-blue-600/30 p-6">
-            <div className="flex items-center gap-4">
-              <div className="bg-blue-600 p-3 rounded-lg">
-                <Icon name="Users" size={24} className="text-white" />
-              </div>
-              <div>
-                <p className="text-gray-400 text-sm">Пользователей</p>
-                <p className="text-2xl font-bold text-white">{stats.users_count}</p>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="bg-slate-800/50 border-cyan-600/30 p-6">
-            <div className="flex items-center gap-4">
-              <div className="bg-cyan-600 p-3 rounded-lg">
-                <Icon name="ShieldCheck" size={24} className="text-white" />
-              </div>
-              <div>
-                <p className="text-gray-400 text-sm">Администраторов</p>
-                <p className="text-2xl font-bold text-white">{stats.admins_count}</p>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="bg-slate-800/50 border-purple-600/30 p-6">
-            <div className="flex items-center gap-4">
-              <div className="bg-purple-600 p-3 rounded-lg">
-                <Icon name="Crown" size={24} className="text-white" />
-              </div>
-              <div>
-                <p className="text-gray-400 text-sm">Главных админов</p>
-                <p className="text-2xl font-bold text-white">{stats.superadmins_count}</p>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="bg-slate-800/50 border-green-600/30 p-6">
-            <div className="flex items-center gap-4">
-              <div className="bg-green-600 p-3 rounded-lg">
-                <Icon name="UserPlus" size={24} className="text-white" />
-              </div>
-              <div>
-                <p className="text-gray-400 text-sm">Всего</p>
-                <p className="text-2xl font-bold text-white">{stats.total_users}</p>
-              </div>
-            </div>
-          </Card>
-        </div>
-
-        <Card className="bg-slate-800/50 border-yellow-600/30 p-6 mb-6">
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <Input
-                placeholder="Поиск по ФИО, email или компании..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-slate-700/50 border-yellow-600/30 text-white"
-              />
-            </div>
-            <Button className="bg-gradient-to-r from-blue-600 to-cyan-700">
-              <Icon name="Search" size={20} className="mr-2" />
-              Поиск
-            </Button>
-          </div>
         </Card>
-
-        <div className="space-y-4">
-          {loading ? (
-            <Card className="bg-slate-800/50 border-yellow-600/30 p-8 text-center">
-              <p className="text-gray-400">Загрузка...</p>
-            </Card>
-          ) : filteredUsers.length === 0 ? (
-            <Card className="bg-slate-800/50 border-yellow-600/30 p-8 text-center">
-              <p className="text-gray-400">Пользователи не найдены</p>
-            </Card>
-          ) : (
-            filteredUsers.map((user) => (
-              <Card key={user.id} className="bg-slate-800/50 border-yellow-600/30 p-6">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-3">
-                      <h3 className="text-xl font-bold text-white">
-                        {isSuperAdmin ? user.fio : (user.display_name || user.fio)}
-                      </h3>
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${getRoleBadgeColor(user.role)}`}>
-                        {getRoleLabel(user.role)}
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <p className="text-gray-400">Email:</p>
-                        <p className="text-white">{user.email}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-400">Компания:</p>
-                        <p className="text-white">{user.company}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-400">Подразделение:</p>
-                        <p className="text-white">{user.subdivision}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-400">Должность:</p>
-                        <p className="text-white">{user.position}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2">
-                    {isSuperAdmin && (
-                      <>
-                        <Select onValueChange={(value) => handleUpdateRole(user.id, value)}>
-                          <SelectTrigger className="w-40 bg-slate-700/50 border-yellow-600/30 text-white">
-                            <SelectValue placeholder="Изменить роль" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="user">Пользователь</SelectItem>
-                            <SelectItem value="admin">Администратор</SelectItem>
-                            <SelectItem value="superadmin">Главный админ</SelectItem>
-                          </SelectContent>
-                        </Select>
-
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="outline"
-                              onClick={() => setEditUser(user)}
-                              className="border-blue-600/50 text-blue-400"
-                            >
-                              <Icon name="Edit" size={20} />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="bg-slate-800 border-yellow-600/30">
-                            <DialogHeader>
-                              <DialogTitle className="text-white">Редактировать профиль</DialogTitle>
-                            </DialogHeader>
-                            {editUser && (
-                              <div className="space-y-4">
-                                <div>
-                                  <Label className="text-gray-300">ФИО</Label>
-                                  <Input
-                                    value={editUser.fio}
-                                    onChange={(e) => setEditUser({ ...editUser, fio: e.target.value })}
-                                    className="bg-slate-700/50 border-yellow-600/30 text-white"
-                                  />
-                                </div>
-                                <div>
-                                  <Label className="text-gray-300">Компания</Label>
-                                  <Input
-                                    value={editUser.company}
-                                    onChange={(e) => setEditUser({ ...editUser, company: e.target.value })}
-                                    className="bg-slate-700/50 border-yellow-600/30 text-white"
-                                  />
-                                </div>
-                                <div>
-                                  <Label className="text-gray-300">Подразделение</Label>
-                                  <Input
-                                    value={editUser.subdivision}
-                                    onChange={(e) => setEditUser({ ...editUser, subdivision: e.target.value })}
-                                    className="bg-slate-700/50 border-yellow-600/30 text-white"
-                                  />
-                                </div>
-                                <div>
-                                  <Label className="text-gray-300">Должность</Label>
-                                  <Input
-                                    value={editUser.position}
-                                    onChange={(e) => setEditUser({ ...editUser, position: e.target.value })}
-                                    className="bg-slate-700/50 border-yellow-600/30 text-white"
-                                  />
-                                </div>
-                                <Button
-                                  onClick={handleUpdateProfile}
-                                  className="w-full bg-gradient-to-r from-blue-600 to-cyan-700"
-                                >
-                                  Сохранить
-                                </Button>
-                              </div>
-                            )}
-                          </DialogContent>
-                        </Dialog>
-
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="outline"
-                              onClick={() => setEditCredentials({ id: user.id, email: user.email, newEmail: user.email, newPassword: '' })}
-                              className="border-purple-600/50 text-purple-400"
-                            >
-                              <Icon name="Key" size={20} />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="bg-slate-800 border-purple-600/30">
-                            <DialogHeader>
-                              <DialogTitle className="text-white">Изменить логин и пароль</DialogTitle>
-                            </DialogHeader>
-                            {editCredentials && (
-                              <div className="space-y-4">
-                                <div>
-                                  <Label className="text-gray-300">Email (логин)</Label>
-                                  <Input
-                                    type="email"
-                                    value={editCredentials.newEmail}
-                                    onChange={(e) => setEditCredentials({ ...editCredentials, newEmail: e.target.value })}
-                                    className="bg-slate-700/50 border-purple-600/30 text-white"
-                                  />
-                                </div>
-                                <div>
-                                  <Label className="text-gray-300">Новый пароль</Label>
-                                  <Input
-                                    type="text"
-                                    value={editCredentials.newPassword}
-                                    onChange={(e) => setEditCredentials({ ...editCredentials, newPassword: e.target.value })}
-                                    className="bg-slate-700/50 border-purple-600/30 text-white"
-                                    placeholder="Оставьте пустым, чтобы не менять"
-                                  />
-                                </div>
-                                <Button
-                                  onClick={handleChangeCredentials}
-                                  className="w-full bg-gradient-to-r from-purple-600 to-pink-700"
-                                >
-                                  <Icon name="Save" size={20} className="mr-2" />
-                                  Сохранить
-                                </Button>
-                              </div>
-                            )}
-                          </DialogContent>
-                        </Dialog>
-
-                        <Button
-                          variant="outline"
-                          onClick={() => handleDeleteUser(user.id)}
-                          className="border-red-600/50 text-red-400 hover:bg-red-600/10"
-                        >
-                          <Icon name="Trash2" size={20} />
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </Card>
-            ))
-          )}
-        </div>
       </div>
+
+      <UserEditDialogs
+        editUser={editUser}
+        editCredentials={editCredentials}
+        onEditUserChange={setEditUser}
+        onEditCredentialsChange={setEditCredentials}
+        onUpdateProfile={handleUpdateProfile}
+        onChangeCredentials={handleChangeCredentials}
+      />
     </div>
   );
 };
