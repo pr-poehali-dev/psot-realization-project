@@ -12,6 +12,7 @@ interface Organization {
   registration_code: string;
   user_count: number;
   subscription_type: string;
+  logo_url: string | null;
 }
 
 interface Module {
@@ -40,6 +41,8 @@ const OrganizationSettingsPage = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
   useEffect(() => {
     const role = localStorage.getItem('userRole');
@@ -49,6 +52,12 @@ const OrganizationSettingsPage = () => {
     }
     loadData();
   }, [navigate, id]);
+
+  useEffect(() => {
+    if (organization?.logo_url) {
+      setLogoPreview(organization.logo_url);
+    }
+  }, [organization]);
 
   const loadData = async () => {
     try {
@@ -134,6 +143,80 @@ const OrganizationSettingsPage = () => {
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Можно загружать только изображения');
+      return;
+    }
+
+    const maxSize = 5 * 1024 * 1024; // 5 МБ
+    if (file.size > maxSize) {
+      toast.error('Размер изображения не должен превышать 5 МБ');
+      return;
+    }
+
+    setUploadingLogo(true);
+
+    try {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const base64 = event.target?.result as string;
+        setLogoPreview(base64);
+
+        const response = await fetch('https://functions.poehali.dev/5fa1bf89-3c17-4533-889a-7273e1ef1e3b', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: organization!.id,
+            logo_url: base64
+          })
+        });
+
+        if (response.ok) {
+          toast.success('Логотип загружен');
+          setOrganization(prev => prev ? { ...prev, logo_url: base64 } : null);
+        } else {
+          toast.error('Не удалось загрузить логотип');
+          setLogoPreview(organization?.logo_url || null);
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error(error);
+      toast.error('Ошибка загрузки логотипа');
+      setLogoPreview(organization?.logo_url || null);
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
+  const handleDeleteLogo = async () => {
+    try {
+      const response = await fetch('https://functions.poehali.dev/5fa1bf89-3c17-4533-889a-7273e1ef1e3b', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: organization!.id,
+          logo_url: null
+        })
+      });
+
+      if (response.ok) {
+        toast.success('Логотип удален');
+        setLogoPreview(null);
+        setOrganization(prev => prev ? { ...prev, logo_url: null } : null);
+      } else {
+        toast.error('Не удалось удалить логотип');
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error('Ошибка удаления логотипа');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
@@ -189,7 +272,58 @@ const OrganizationSettingsPage = () => {
                 <div>Пользователей: <span className="font-semibold text-white">{organization.user_count}</span></div>
               </div>
               
+              {/* Логотип предприятия */}
               <div className="border-t border-purple-600/30 pt-4">
+                <h4 className="text-lg font-semibold text-white mb-3">Логотип предприятия</h4>
+                <div className="flex items-start gap-4">
+                  {logoPreview ? (
+                    <div className="relative group">
+                      <img 
+                        src={logoPreview} 
+                        alt="Логотип" 
+                        className="w-32 h-32 object-contain rounded-lg border-2 border-yellow-600/30 bg-white/5"
+                      />
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={handleDeleteLogo}
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Icon name="Trash2" size={16} />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="w-32 h-32 flex items-center justify-center border-2 border-dashed border-yellow-600/30 rounded-lg bg-slate-700/30">
+                      <Icon name="Image" size={32} className="text-slate-500" />
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-400 mb-3">
+                      Логотип будет отображаться на странице входа предприятия. Рекомендуемый размер: 256x256px
+                    </p>
+                    <label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoUpload}
+                        disabled={uploadingLogo}
+                        className="hidden"
+                      />
+                      <Button
+                        as="span"
+                        size="sm"
+                        disabled={uploadingLogo}
+                        className="bg-blue-600 hover:bg-blue-700 cursor-pointer"
+                      >
+                        <Icon name={uploadingLogo ? "Loader2" : "Upload"} size={16} className={`mr-2 ${uploadingLogo ? 'animate-spin' : ''}`} />
+                        {uploadingLogo ? 'Загрузка...' : logoPreview ? 'Изменить логотип' : 'Загрузить логотип'}
+                      </Button>
+                    </label>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="border-t border-purple-600/30 pt-4 mt-4">
                 <h4 className="text-lg font-semibold text-white mb-3">Ссылки для входа и регистрации</h4>
                 
                 {/* Ссылка для входа */}

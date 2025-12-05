@@ -42,7 +42,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         
         if org_code:
             cur.execute('''
-                SELECT o.id, o.name, o.registration_code
+                SELECT o.id, o.name, o.registration_code, o.logo_url
                 FROM organizations o
                 WHERE o.registration_code = %s AND o.is_active = true
             ''', (org_code,))
@@ -52,7 +52,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 result = {
                     'id': row[0],
                     'name': row[1],
-                    'registration_code': row[2]
+                    'registration_code': row[2],
+                    'logo_url': row[3]
                 }
                 cur.close()
                 conn.close()
@@ -75,7 +76,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         if org_id:
             cur.execute('''
                 SELECT o.id, o.name, o.registration_code, o.created_at, o.trial_end_date, 
-                       o.subscription_type, o.is_active,
+                       o.subscription_type, o.is_active, o.logo_url,
                        COUNT(DISTINCT u.id) as user_count,
                        COUNT(DISTINCT om.module_id) as module_count,
                        COUNT(DISTINCT op.page_id) as page_count
@@ -89,7 +90,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         else:
             cur.execute('''
                 SELECT o.id, o.name, o.registration_code, o.created_at, o.trial_end_date, 
-                       o.subscription_type, o.is_active,
+                       o.subscription_type, o.is_active, o.logo_url,
                        COUNT(DISTINCT u.id) as user_count,
                        COUNT(DISTINCT om.module_id) as module_count,
                        COUNT(DISTINCT op.page_id) as page_count
@@ -113,9 +114,10 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'trial_end_date': row[4].isoformat() if row[4] else None,
                 'subscription_type': row[5],
                 'is_active': row[6],
-                'user_count': row[7],
-                'module_count': row[8],
-                'page_count': row[9]
+                'logo_url': row[7],
+                'user_count': row[8],
+                'module_count': row[9],
+                'page_count': row[10]
             })
         
         cur.close()
@@ -211,6 +213,10 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         if 'trial_end_date' in body:
             updates.append('trial_end_date = %s')
             params.append(body['trial_end_date'])
+        
+        if 'logo_url' in body:
+            updates.append('logo_url = %s')
+            params.append(body['logo_url'])
         
         if updates:
             params.append(org_id)
