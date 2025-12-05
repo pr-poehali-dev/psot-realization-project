@@ -125,6 +125,14 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         # Парсим multipart
         parsed = parse_multipart(body_bytes, boundary)
         
+        # Отладка
+        print(f"Parsed keys: {list(parsed.keys())}")
+        for key in parsed.keys():
+            if isinstance(parsed[key], dict):
+                print(f"  {key}: file, filename={parsed[key].get('filename')}, size={len(parsed[key].get('data', b''))}")
+            else:
+                print(f"  {key}: {parsed[key][:50] if len(str(parsed[key])) > 50 else parsed[key]}")
+        
         # Проверяем наличие необходимых полей
         if 'file' not in parsed:
             return {
@@ -153,7 +161,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         
         file_name = file_info['filename']
         file_data = file_info['data']
-        folder_id = parsed['folder_id']
+        folder_id = str(parsed['folder_id']).strip()
         
         if not file_data or not file_name or not folder_id:
             return {
@@ -206,9 +214,12 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             conn.close()
     
     except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"Error occurred: {error_trace}")
         return {
             'statusCode': 500,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': f'Ошибка загрузки: {str(e)}'}),
+            'body': json.dumps({'error': f'Ошибка загрузки: {str(e)}', 'trace': error_trace}),
             'isBase64Encoded': False
         }
