@@ -22,23 +22,58 @@ interface PabData {
 
 export function generatePabHtml(data: PabData): string {
   const observationsHtml = data.observations.map(obs => `
-    <tr>
-      <td style="border: 1px solid #000; padding: 8px; text-align: center;">${obs.observation_number}</td>
-      <td style="border: 1px solid #000; padding: 8px;">${obs.description}</td>
-      <td style="border: 1px solid #000; padding: 8px;">${obs.category}</td>
-      <td style="border: 1px solid #000; padding: 8px;">${obs.conditions_actions}</td>
-      <td style="border: 1px solid #000; padding: 8px;">${obs.hazard_factors}</td>
-      <td style="border: 1px solid #000; padding: 8px;">${obs.measures}</td>
-      <td style="border: 1px solid #000; padding: 8px;">${obs.responsible_person}</td>
-      <td style="border: 1px solid #000; padding: 8px;">${obs.deadline}</td>
-    </tr>
-    ${obs.photo_base64 ? `
-    <tr>
-      <td colspan="8" style="border: 1px solid #000; padding: 8px; text-align: center;">
-        <img src="${obs.photo_base64}" alt="Фото наблюдения ${obs.observation_number}" style="max-width: 100%; max-height: 400px; border-radius: 4px;" />
-      </td>
-    </tr>
-    ` : ''}
+    <div style="page-break-before: ${obs.observation_number > 1 ? 'always' : 'auto'}; margin-top: ${obs.observation_number > 1 ? '0' : '30px'};">
+      ${obs.observation_number > 1 ? '<div style="text-align: right; font-size: 10pt; margin-bottom: 20px;">Регистрация ПАБ №${data.doc_number}</div>' : ''}
+      
+      <h2 style="font-size: 12pt; font-weight: bold; margin-bottom: 15px;">Наблюдение №${obs.observation_number}</h2>
+      
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
+        <tr>
+          <td style="border: 1px solid #000; padding: 10px; width: 40%; font-weight: bold;">Дата</td>
+          <td style="border: 1px solid #000; padding: 10px;">${new Date(data.doc_date).toLocaleDateString('ru-RU')}</td>
+        </tr>
+        <tr>
+          <td style="border: 1px solid #000; padding: 10px; font-weight: bold;">Категория наблюдений</td>
+          <td style="border: 1px solid #000; padding: 10px;">${obs.category}</td>
+        </tr>
+        <tr>
+          <td style="border: 1px solid #000; padding: 10px; font-weight: bold;">Вид условий и действий</td>
+          <td style="border: 1px solid #000; padding: 10px;">${obs.conditions_actions}</td>
+        </tr>
+        <tr>
+          <td style="border: 1px solid #000; padding: 10px; font-weight: bold;">Опасные факторы</td>
+          <td style="border: 1px solid #000; padding: 10px;">${obs.hazard_factors}</td>
+        </tr>
+        <tr>
+          <td style="border: 1px solid #000; padding: 10px; font-weight: bold; vertical-align: top;">Описание наблюдения №${obs.observation_number}</td>
+          <td style="border: 1px solid #000; padding: 10px; white-space: pre-wrap;">${obs.description}</td>
+        </tr>
+        <tr>
+          <td style="border: 1px solid #000; padding: 10px; font-weight: bold; vertical-align: top;">Рекомендуемые мероприятия для устранения</td>
+          <td style="border: 1px solid #000; padding: 10px; white-space: pre-wrap;">${obs.measures}</td>
+        </tr>
+        <tr>
+          <td style="border: 1px solid #000; padding: 10px; font-weight: bold;">Ответственный за выполнение</td>
+          <td style="border: 1px solid #000; padding: 10px;">${obs.responsible_person}</td>
+        </tr>
+        <tr>
+          <td style="border: 1px solid #000; padding: 10px; font-weight: bold;">Срок</td>
+          <td style="border: 1px solid #000; padding: 10px;">${new Date(obs.deadline).toLocaleDateString('ru-RU')}</td>
+        </tr>
+        <tr>
+          <td style="border: 1px solid #000; padding: 10px; font-weight: bold;">Статус</td>
+          <td style="border: 1px solid #000; padding: 10px;">Новый</td>
+        </tr>
+        ${obs.photo_base64 ? `
+        <tr>
+          <td style="border: 1px solid #000; padding: 10px; font-weight: bold; vertical-align: top;">Фото наблюдения №${obs.observation_number}</td>
+          <td style="border: 1px solid #000; padding: 10px; text-align: center;">
+            <img src="${obs.photo_base64}" alt="Фото наблюдения ${obs.observation_number}" style="max-width: 100%; max-height: 500px;" />
+          </td>
+        </tr>
+        ` : ''}
+      </table>
+    </div>
   `).join('');
 
   return `<!DOCTYPE html>
@@ -46,11 +81,12 @@ export function generatePabHtml(data: PabData): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ПАБ ${data.doc_number}</title>
+  <title>Регистрация ПАБ №${data.doc_number}</title>
   <style>
     @media print {
       .no-print { display: none !important; }
-      body { margin: 0; }
+      body { margin: 0; padding: 0; }
+      .page-break { page-break-before: always; }
     }
     
     body {
@@ -58,6 +94,7 @@ export function generatePabHtml(data: PabData): string {
       margin: 0;
       padding: 20px;
       background: #f5f5f5;
+      font-size: 11pt;
     }
     
     .document-container {
@@ -74,202 +111,89 @@ export function generatePabHtml(data: PabData): string {
     }
     
     .header h1 {
-      font-size: 18pt;
+      font-size: 12pt;
       font-weight: bold;
-      margin: 10px 0;
-    }
-    
-    .info-section {
-      margin-bottom: 20px;
-      line-height: 1.8;
-    }
-    
-    .info-row {
-      display: flex;
-      margin-bottom: 8px;
-    }
-    
-    .info-label {
-      font-weight: bold;
-      min-width: 200px;
-    }
-    
-    .info-value {
-      flex: 1;
-      border-bottom: 1px solid #000;
-      padding-left: 10px;
+      margin: 5px 0;
     }
     
     table {
       width: 100%;
       border-collapse: collapse;
-      margin: 20px 0;
-      font-size: 10pt;
-    }
-    
-    th {
-      background: #f0f0f0;
-      border: 1px solid #000;
-      padding: 8px;
-      text-align: center;
-      font-weight: bold;
+      font-size: 11pt;
     }
     
     td {
       border: 1px solid #000;
-      padding: 8px;
+      padding: 10px;
     }
     
-    .actions {
-      position: fixed;
-      top: 20px;
-      right: 20px;
+    .signature-section {
+      margin-top: 50px;
+      page-break-inside: avoid;
+    }
+    
+    .signature-row {
       display: flex;
-      gap: 10px;
-      z-index: 1000;
+      justify-content: space-between;
+      margin: 20px 0;
+      align-items: flex-end;
     }
     
-    .btn {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      transition: all 0.2s;
-    }
-    
-    .btn-primary {
-      background: #3b82f6;
-      color: white;
-    }
-    
-    .btn-primary:hover {
-      background: #2563eb;
-    }
-    
-    .btn-secondary {
-      background: #10b981;
-      color: white;
-    }
-    
-    .btn-secondary:hover {
-      background: #059669;
+    .signature-line {
+      min-width: 300px;
+      border-bottom: 1px solid #000;
+      margin: 0 10px;
     }
   </style>
 </head>
 <body>
-  <div class="actions no-print">
-    <button class="btn btn-primary" onclick="downloadPDF()">
-      📥 Скачать PDF
-    </button>
-    <button class="btn btn-secondary" onclick="window.print()">
-      🖨️ Распечатать
-    </button>
-  </div>
-
   <div class="document-container">
     <div class="header">
-      <h1>РЕГИСТРАЦИЯ ПОВЕДЕНЧЕСКОГО АУДИТА БЕЗОПАСНОСТИ (ПАБ)</h1>
-      <div style="margin-top: 20px;">
-        <strong>№ ${data.doc_number}</strong> от <strong>${new Date(data.doc_date).toLocaleDateString('ru-RU')}</strong>
-      </div>
+      <div style="text-align: right; font-size: 10pt; margin-bottom: 20px;">Регистрация ПАБ №${data.doc_number}</div>
+      <h1>Регистрация ПАБ №${data.doc_number}</h1>
     </div>
 
-    <div class="info-section">
-      <div class="info-row">
-        <span class="info-label">Проверяющий (ФИО):</span>
-        <span class="info-value">${data.inspector_fio}</span>
-      </div>
-      <div class="info-row">
-        <span class="info-label">Должность:</span>
-        <span class="info-value">${data.inspector_position}</span>
-      </div>
-      <div class="info-row">
-        <span class="info-label">Подразделение:</span>
-        <span class="info-value">${data.department}</span>
-      </div>
-      <div class="info-row">
-        <span class="info-label">Место проведения:</span>
-        <span class="info-value">${data.location}</span>
-      </div>
-      <div class="info-row">
-        <span class="info-label">Проверяемый объект:</span>
-        <span class="info-value">${data.checked_object}</span>
-      </div>
-    </div>
-
-    ${data.photo_base64 ? `
-    <div style="margin: 30px 0; text-align: center;">
-      <h3 style="font-size: 12pt; margin-bottom: 15px;">Фотофиксация</h3>
-      <img src="${data.photo_base64}" alt="Фото с места проверки" style="max-width: 100%; max-height: 400px; border: 2px solid #000; border-radius: 4px;" />
-    </div>
-    ` : ''}
-
-    <h2 style="text-align: center; font-size: 14pt; margin: 30px 0 15px 0;">Выявленные наблюдения</h2>
-
-    <table>
-      <thead>
-        <tr>
-          <th style="width: 30px;">№</th>
-          <th style="width: 15%;">Описание наблюдения</th>
-          <th style="width: 10%;">Категория</th>
-          <th style="width: 12%;">Условия/Действия</th>
-          <th style="width: 12%;">Опасные факторы</th>
-          <th style="width: 18%;">Рекомендуемые меры</th>
-          <th style="width: 15%;">Ответственный</th>
-          <th style="width: 10%;">Срок</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${observationsHtml}
-      </tbody>
+    <table style="margin-bottom: 30px;">
+      <tr>
+        <td style="width: 40%; font-weight: bold;">Проверяющий (ФИО):</td>
+        <td>${data.inspector_fio}</td>
+      </tr>
+      <tr>
+        <td style="font-weight: bold;">Должность:</td>
+        <td>${data.inspector_position}</td>
+      </tr>
+      <tr>
+        <td style="font-weight: bold;">Подразделение:</td>
+        <td>${data.department}</td>
+      </tr>
+      <tr>
+        <td style="font-weight: bold;">Место проведения:</td>
+        <td>${data.location}</td>
+      </tr>
+      <tr>
+        <td style="font-weight: bold;">Проверяемый объект:</td>
+        <td>${data.checked_object}</td>
+      </tr>
     </table>
 
-    <div style="margin-top: 50px;">
-      <div style="display: flex; justify-content: space-between; margin-top: 60px;">
-        <div>
-          <div>Проверяющий: ___________________</div>
-          <div style="margin-top: 5px; font-size: 9pt;">(подпись)</div>
-        </div>
-        <div>
-          <div>Дата: ___________________</div>
-        </div>
+    ${observationsHtml}
+
+    <div class="signature-section">
+      <div class="signature-row">
+        <span>Проверяющий:</span>
+        <span class="signature-line"></span>
+        <span>Дата: ${new Date(data.doc_date).toLocaleDateString('ru-RU')}</span>
       </div>
+      <div style="text-align: center; font-size: 9pt; color: #666; margin-top: -10px; margin-left: 150px;">(Подпись)</div>
+      
+      <div class="signature-row" style="margin-top: 40px;">
+        <span>Ответственный:</span>
+        <span class="signature-line"></span>
+        <span>Дата: ${new Date(data.doc_date).toLocaleDateString('ru-RU')}</span>
+      </div>
+      <div style="text-align: center; font-size: 9pt; color: #666; margin-top: -10px; margin-left: 150px;">(Подпись)</div>
     </div>
   </div>
-
-  <script>
-    async function downloadPDF() {
-      try {
-        const element = document.querySelector('.document-container');
-        
-        // Используем html2pdf.js через CDN
-        const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-        document.head.appendChild(script);
-        
-        script.onload = () => {
-          const opt = {
-            margin: 10,
-            filename: 'ПАБ_${data.doc_number}_${data.doc_date}.pdf',
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-          };
-          
-          // @ts-ignore
-          html2pdf().set(opt).from(element).save();
-        };
-      } catch (error) {
-        alert('Ошибка создания PDF. Используйте функцию печати браузера.');
-        console.error(error);
-      }
-    }
-  </script>
 </body>
 </html>`;
 }
