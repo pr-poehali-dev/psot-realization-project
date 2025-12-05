@@ -35,7 +35,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         }
     
     try:
-        content_type = event.get('headers', {}).get('content-type', '')
+        headers = event.get('headers', {})
+        content_type = headers.get('content-type') or headers.get('Content-Type', '')
         
         if 'multipart/form-data' not in content_type.lower():
             return {
