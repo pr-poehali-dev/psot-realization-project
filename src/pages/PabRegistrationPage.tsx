@@ -8,6 +8,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Icon from '@/components/ui/icon';
 import { toast } from 'sonner';
+import { Packer } from 'docx';
+import { generatePabDocument } from '@/utils/generatePabDocument';
 
 interface Observation {
   observation_number: number;
@@ -138,41 +140,57 @@ export default function PabRegistrationPage() {
     setLoading(true);
 
     try {
+      const userId = localStorage.getItem('userId');
       let photoUrl = '';
       
-      // Загрузка фото, если есть
+      const getFoldersResponse = await fetch(`https://functions.poehali.dev/89ba96e1-c10f-490a-ad91-54a977d9f798?user_id=${userId}`);
+      const foldersData = await getFoldersResponse.json();
+      
+      let departmentFolderId;
+      const departmentFolder = foldersData.folders?.find((f: any) => f.folder_name === department);
+      
+      if (departmentFolder) {
+        departmentFolderId = departmentFolder.id;
+      } else {
+        const createDeptResponse = await fetch('https://functions.poehali.dev/89ba96e1-c10f-490a-ad91-54a977d9f798', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'create',
+            user_id: userId,
+            folder_name: department
+          })
+        });
+        const deptData = await createDeptResponse.json();
+        departmentFolderId = deptData.folder_id;
+      }
+      
+      let pabFolderId;
+      const pabFolderName = 'Регистрация ПАБ';
+      
+      const pabFolder = foldersData.folders?.find((f: any) => f.folder_name === pabFolderName && f.parent_id === departmentFolderId);
+      
+      if (pabFolder) {
+        pabFolderId = pabFolder.id;
+      } else {
+        const createPabResponse = await fetch('https://functions.poehali.dev/89ba96e1-c10f-490a-ad91-54a977d9f798', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'create',
+            user_id: userId,
+            folder_name: pabFolderName,
+            parent_id: departmentFolderId
+          })
+        });
+        const pabData = await createPabResponse.json();
+        pabFolderId = pabData.folder_id;
+      }
+      
       if (photoFile) {
-        const userId = localStorage.getItem('userId');
-        
-        // Получаем или создаем папку для ПАБ фотографий
-        let folderId;
-        
-        // Пытаемся найти существующую папку
-        const getFoldersResponse = await fetch(`https://functions.poehali.dev/89ba96e1-c10f-490a-ad91-54a977d9f798?user_id=${userId}`);
-        const foldersData = await getFoldersResponse.json();
-        const existingFolder = foldersData.folders?.find((f: any) => f.folder_name === 'ПАБ - Фото нарушений');
-        
-        if (existingFolder) {
-          folderId = existingFolder.id;
-        } else {
-          // Создаем новую папку
-          const folderResponse = await fetch('https://functions.poehali.dev/89ba96e1-c10f-490a-ad91-54a977d9f798', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              action: 'create',
-              user_id: userId,
-              folder_name: 'ПАБ - Фото нарушений'
-            })
-          });
-          const folderData = await folderResponse.json();
-          folderId = folderData.folder_id;
-        }
-        
-        // Загружаем фото
         const formData = new FormData();
         formData.append('file', photoFile);
-        formData.append('folder_id', folderId.toString());
+        formData.append('folder_id', pabFolderId.toString());
         
         const uploadResponse = await fetch('https://functions.poehali.dev/cbbbbc82-61fa-4061-88d0-900cb586aea6', {
           method: 'POST',
@@ -220,31 +238,31 @@ export default function PabRegistrationPage() {
         }
       }
 
-      // Автоматическое создание папки в хранилище для подразделения
-      if (department) {
-        const userId = localStorage.getItem('userId');
-        try {
-          // Проверяем, существует ли папка с названием подразделения
-          const getFoldersResponse = await fetch(`https://functions.poehali.dev/89ba96e1-c10f-490a-ad91-54a977d9f798?user_id=${userId}`);
-          const foldersData = await getFoldersResponse.json();
-          const departmentFolder = foldersData.folders?.find((f: any) => f.folder_name === department);
-          
-          // Если папки нет - создаем
-          if (!departmentFolder) {
-            await fetch('https://functions.poehali.dev/89ba96e1-c10f-490a-ad91-54a977d9f798', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                action: 'create',
-                user_id: userId,
-                folder_name: department
-              })
-            });
-          }
-        } catch (error) {
-          console.log('Failed to create department folder:', error);
-        }
-      }
+      const pabData = {
+        doc_number: docNumber,
+        doc_date: docDate,
+        inspector_fio: inspectorFio,
+        inspector_position: inspectorPosition,
+        department,
+        location,
+        checked_object: checkedObject,
+        observations
+      };
+      
+      const doc = generatePabDocument(pabData);
+      const blob = await Packer.toBlob(doc);
+      const wordFile = new File([blob], `ПАБ_${docNumber}_${new Date().toISOString().split('T')[0]}.docx`, {
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      });
+      
+      const docFormData = new FormData();
+      docFormData.append('file', wordFile);
+      docFormData.append('folder_id', pabFolderId.toString());
+      
+      await fetch('https://functions.poehali.dev/cbbbbc82-61fa-4061-88d0-900cb586aea6', {
+        method: 'POST',
+        body: docFormData
+      });
 
       toast.success('ПАБ успешно зарегистрирован и отправлен');
       navigate('/');
