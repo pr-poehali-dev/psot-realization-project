@@ -25,6 +25,7 @@ import OrganizationUsersPage from "./pages/OrganizationUsersPage";
 import LogoLibraryPage from "./pages/LogoLibraryPage";
 import SubscriptionPlansPage from "./pages/SubscriptionPlansPage";
 import SubscriptionPlanEditPage from "./pages/SubscriptionPlanEditPage";
+import PointsRulesPage from "./pages/PointsRulesPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -57,6 +58,7 @@ const App = () => (
           <Route path="/logo-library" element={<LogoLibraryPage />} />
           <Route path="/subscription-plans" element={<SubscriptionPlansPage />} />
           <Route path="/subscription-plan/:id" element={<SubscriptionPlanEditPage />} />
+          <Route path="/points-rules/:id" element={<PointsRulesPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

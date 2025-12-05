@@ -1,0 +1,12 @@
+{
+  "tests": [
+    {
+      "name": "Get all points rules",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": "array",
+      "bodyMatcher": "partial"
+    }
+  ]
+}

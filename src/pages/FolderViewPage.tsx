@@ -96,7 +96,7 @@ const FolderViewPage = () => {
         }
       });
 
-      xhr.addEventListener('load', () => {
+      xhr.addEventListener('load', async () => {
         if (xhr.status === 200) {
           const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
           try {
@@ -107,6 +107,24 @@ const FolderViewPage = () => {
           } catch {
             toast.success(`Файл загружен (${fileSizeMB} МБ)`);
           }
+          
+          const organizationId = localStorage.getItem('organizationId');
+          if (organizationId) {
+            try {
+              await fetch('https://functions.poehali.dev/c250cb0e-130b-4d0b-8980-cc13bad4f6ca', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  org_id: organizationId,
+                  action_type: 'file_upload',
+                  user_id: localStorage.getItem('userId')
+                })
+              });
+            } catch (error) {
+              console.log('Points award failed:', error);
+            }
+          }
+          
           loadFiles();
           if (fileInputRef.current) fileInputRef.current.value = '';
         } else {

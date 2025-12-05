@@ -75,6 +75,23 @@ const StoragePage = () => {
         throw new Error(error.error || 'Ошибка создания папки');
       }
 
+      const organizationId = localStorage.getItem('organizationId');
+      if (organizationId) {
+        try {
+          await fetch('https://functions.poehali.dev/c250cb0e-130b-4d0b-8980-cc13bad4f6ca', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              org_id: organizationId,
+              action_type: 'folder_create',
+              user_id: localStorage.getItem('userId')
+            })
+          });
+        } catch (error) {
+          console.log('Points award failed:', error);
+        }
+      }
+      
       toast.success('Папка создана');
       setNewFolderName('');
       setIsCreateDialogOpen(false);

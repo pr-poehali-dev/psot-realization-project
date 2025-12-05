@@ -374,6 +374,14 @@ const OrganizationSettingsPage = () => {
                         <p className="text-3xl font-bold text-white">{pointsBalance.toLocaleString()}</p>
                       </div>
                       <div className="flex gap-2">
+                        <Button 
+                          size="sm" 
+                          onClick={() => navigate(`/points-rules/${id}`)} 
+                          className="bg-blue-600 hover:bg-blue-700"
+                        >
+                          <Icon name="Settings" size={16} className="mr-2" />
+                          Правила
+                        </Button>
                         <Button size="sm" onClick={addPoints} className="bg-green-600 hover:bg-green-700">
                           <Icon name="Plus" size={16} className="mr-2" />
                           Начислить

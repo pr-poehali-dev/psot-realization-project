@@ -47,6 +47,37 @@ const Login = () => {
         if (data.organizationId) {
           localStorage.setItem('organizationId', data.organizationId);
         }
+        
+        if (isRegister && data.organizationId) {
+          try {
+            await fetch('https://functions.poehali.dev/c250cb0e-130b-4d0b-8980-cc13bad4f6ca', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                org_id: data.organizationId,
+                action_type: 'user_registration',
+                user_id: data.userId
+              })
+            });
+          } catch (error) {
+            console.log('Points award failed:', error);
+          }
+        } else if (!isRegister && data.organizationId) {
+          try {
+            await fetch('https://functions.poehali.dev/c250cb0e-130b-4d0b-8980-cc13bad4f6ca', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                org_id: data.organizationId,
+                action_type: 'user_login',
+                user_id: data.userId
+              })
+            });
+          } catch (error) {
+            console.log('Points award failed:', error);
+          }
+        }
+        
         toast({ title: isRegister ? 'Регистрация успешна!' : 'Вход выполнен!' });
         
         const role = data.role || 'user';
