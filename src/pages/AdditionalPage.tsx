@@ -22,6 +22,27 @@ const AdditionalPage = () => {
       route: '/storage',
       description: 'Управление файлами и документами'
     },
+    { 
+      label: 'Графики', 
+      icon: 'BarChart3', 
+      color: 'from-blue-500 to-blue-600', 
+      route: '/charts',
+      description: 'Аналитические графики и диаграммы'
+    },
+    { 
+      label: 'ОтПБ', 
+      icon: 'Flame', 
+      color: 'from-orange-500 to-red-600', 
+      route: '/otpb',
+      description: 'Отдел пожарной безопасности'
+    },
+    { 
+      label: 'Сформировать отчёт', 
+      icon: 'FileCheck', 
+      color: 'from-green-600 to-green-700', 
+      route: '/reports',
+      description: 'Создание отчётных документов'
+    },
   ];
 
   return (

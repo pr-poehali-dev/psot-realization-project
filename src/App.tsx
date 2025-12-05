@@ -29,6 +29,7 @@ import SubscriptionPlanEditPage from "./pages/SubscriptionPlanEditPage";
 import PointsRulesPage from "./pages/PointsRulesPage";
 import TariffManagementPage from "./pages/TariffManagementPage";
 import OrganizationModulesPage from "./pages/OrganizationModulesPage";
+import MyMetricsPage from "./pages/MyMetricsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -65,6 +66,7 @@ const App = () => (
           <Route path="/points-rules/:id" element={<PointsRulesPage />} />
           <Route path="/tariff-management" element={<TariffManagementPage />} />
           <Route path="/organization-modules/:id" element={<OrganizationModulesPage />} />
+          <Route path="/my-metrics" element={<MyMetricsPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
