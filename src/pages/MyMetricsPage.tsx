@@ -1,16 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import Icon from '@/components/ui/icon';
 import { toast } from 'sonner';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { generatePabHtml } from '@/utils/generatePabHtml';
+import { MetricsDateFilter } from '@/components/metrics/MetricsDateFilter';
+import { MetricsTabSwitcher } from '@/components/metrics/MetricsTabSwitcher';
+import { MetricsCards } from '@/components/metrics/MetricsCards';
+import { ObservationsDialog } from '@/components/metrics/ObservationsDialog';
 
 interface Observation {
   id: number;
@@ -413,6 +410,11 @@ const MyMetricsPage = () => {
     }
   };
 
+  const handleUpdateMetrics = () => {
+    loadMetrics(dateFrom, dateTo);
+    loadPkMetrics(dateFrom, dateTo);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
       <div className="max-w-7xl mx-auto">
@@ -433,270 +435,32 @@ const MyMetricsPage = () => {
           </div>
         </div>
 
-        <Card className="bg-slate-800/50 border-yellow-600/30 p-6 mb-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Период</h3>
-          <div className="flex gap-4 items-end">
-            <div className="flex-1">
-              <label className="text-sm text-slate-300 block mb-2">С</label>
-              <input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-                className="w-full bg-slate-700 border border-slate-600 text-white rounded-lg px-4 py-2"
-              />
-            </div>
-            <div className="flex-1">
-              <label className="text-sm text-slate-300 block mb-2">По</label>
-              <input
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-                className="w-full bg-slate-700 border border-slate-600 text-white rounded-lg px-4 py-2"
-              />
-            </div>
-            <Button
-              onClick={() => {
-                loadMetrics(dateFrom, dateTo);
-                loadPkMetrics(dateFrom, dateTo);
-              }}
-              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
-            >
-              <Icon name="Search" size={20} className="mr-2" />
-              Обновить
-            </Button>
-          </div>
-        </Card>
+        <MetricsDateFilter
+          dateFrom={dateFrom}
+          dateTo={dateTo}
+          onDateFromChange={setDateFrom}
+          onDateToChange={setDateTo}
+          onUpdate={handleUpdateMetrics}
+        />
 
-        <div className="flex gap-4 mb-6">
-          <Button
-            onClick={() => setActiveTab('pab')}
-            className={`flex-1 py-6 text-lg font-bold transition-all ${
-              activeTab === 'pab'
-                ? 'bg-gradient-to-r from-red-600 to-red-700 text-white'
-                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-            }`}
-          >
-            <Icon name="FileText" size={24} className="mr-2" />
-            Мои показатели по ПАБ
-          </Button>
-          <Button
-            onClick={() => setActiveTab('pk')}
-            className={`flex-1 py-6 text-lg font-bold transition-all ${
-              activeTab === 'pk'
-                ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white'
-                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-            }`}
-          >
-            <Icon name="Shield" size={24} className="mr-2" />
-            Мои показатели по ПК
-          </Button>
-        </div>
+        <MetricsTabSwitcher activeTab={activeTab} onTabChange={setActiveTab} />
 
         {activeTab === 'pab' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card className="bg-slate-800/50 border-yellow-600/30 p-6">
-            <div className="flex items-center gap-4">
-              <div className="bg-gradient-to-br from-yellow-600 to-yellow-700 p-4 rounded-xl">
-                <Icon name="FileText" size={32} className="text-white" />
-              </div>
-              <div>
-                <p className="text-sm text-slate-400">Всего аудитов</p>
-                <p className="text-3xl font-bold text-yellow-500">{metrics.totalAudits}</p>
-              </div>
-            </div>
-          </Card>
-
-          <Card
-            onClick={() => handleMetricClick('all')}
-            className="bg-slate-800/50 border-yellow-600/30 p-6 cursor-pointer hover:border-yellow-600 transition-all hover:scale-105"
-          >
-            <div className="flex items-center gap-4">
-              <div className="bg-gradient-to-br from-amber-700 to-amber-800 p-4 rounded-xl">
-                <Icon name="AlertTriangle" size={32} className="text-white" />
-              </div>
-              <div>
-                <p className="text-sm text-slate-400">Всего выявлено</p>
-                <p className="text-3xl font-bold" style={{ color: '#8B4513' }}>{metrics.totalObservations}</p>
-              </div>
-            </div>
-          </Card>
-
-          <Card
-            onClick={() => handleMetricClick('resolved')}
-            className="bg-slate-800/50 border-yellow-600/30 p-6 cursor-pointer hover:border-yellow-600 transition-all hover:scale-105"
-          >
-            <div className="flex items-center gap-4">
-              <div className="bg-gradient-to-br from-green-600 to-green-700 p-4 rounded-xl">
-                <Icon name="CheckCircle" size={32} className="text-white" />
-              </div>
-              <div>
-                <p className="text-sm text-slate-400">Устранено</p>
-                <p className="text-3xl font-bold text-green-500">{metrics.resolved}</p>
-              </div>
-            </div>
-          </Card>
-
-          <Card
-            onClick={() => handleMetricClick('in_progress')}
-            className="bg-slate-800/50 border-yellow-600/30 p-6 cursor-pointer hover:border-yellow-600 transition-all hover:scale-105"
-          >
-            <div className="flex items-center gap-4">
-              <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-4 rounded-xl">
-                <Icon name="Clock" size={32} className="text-white" />
-              </div>
-              <div>
-                <p className="text-sm text-slate-400">В работе</p>
-                <p className="text-3xl font-bold text-white">{metrics.inProgress}</p>
-              </div>
-            </div>
-          </Card>
-
-          <Card
-            onClick={() => handleMetricClick('overdue')}
-            className="bg-slate-800/50 border-red-600/50 p-6 cursor-pointer hover:border-red-600 transition-all hover:scale-105 animate-pulse"
-          >
-            <div className="flex items-center gap-4">
-              <div className="bg-gradient-to-br from-red-600 to-red-700 p-4 rounded-xl">
-                <Icon name="AlertCircle" size={32} className="text-white" />
-              </div>
-              <div>
-                <p className="text-sm text-slate-400">Просрочено</p>
-                <p className="text-3xl font-bold text-red-500">{metrics.overdue}</p>
-              </div>
-            </div>
-          </Card>
-        </div>
+          <MetricsCards type="pab" metrics={metrics} onMetricClick={handleMetricClick} />
         )}
 
         {activeTab === 'pk' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card className="bg-slate-800/50 border-yellow-600/30 p-6">
-              <div className="flex items-center gap-4">
-                <div className="bg-gradient-to-br from-yellow-600 to-yellow-700 p-4 rounded-xl">
-                  <Icon name="Shield" size={32} className="text-white" />
-                </div>
-                <div>
-                  <p className="text-sm text-slate-400">Всего проверок</p>
-                  <p className="text-3xl font-bold text-yellow-500">{pkMetrics.totalInspections}</p>
-                </div>
-              </div>
-            </Card>
-
-            <Card
-              className="bg-slate-800/50 border-yellow-600/30 p-6 cursor-pointer hover:border-yellow-600 transition-all hover:scale-105"
-            >
-              <div className="flex items-center gap-4">
-                <div className="bg-gradient-to-br from-amber-700 to-amber-800 p-4 rounded-xl">
-                  <Icon name="AlertTriangle" size={32} className="text-white" />
-                </div>
-                <div>
-                  <p className="text-sm text-slate-400">Всего нарушений</p>
-                  <p className="text-3xl font-bold" style={{ color: '#8B4513' }}>{pkMetrics.totalViolations}</p>
-                </div>
-              </div>
-            </Card>
-
-            <Card
-              className="bg-slate-800/50 border-yellow-600/30 p-6 cursor-pointer hover:border-yellow-600 transition-all hover:scale-105"
-            >
-              <div className="flex items-center gap-4">
-                <div className="bg-gradient-to-br from-green-600 to-green-700 p-4 rounded-xl">
-                  <Icon name="CheckCircle" size={32} className="text-white" />
-                </div>
-                <div>
-                  <p className="text-sm text-slate-400">Устранено</p>
-                  <p className="text-3xl font-bold text-green-500">{pkMetrics.resolved}</p>
-                </div>
-              </div>
-            </Card>
-
-            <Card
-              className="bg-slate-800/50 border-yellow-600/30 p-6 cursor-pointer hover:border-yellow-600 transition-all hover:scale-105"
-            >
-              <div className="flex items-center gap-4">
-                <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-4 rounded-xl">
-                  <Icon name="Clock" size={32} className="text-white" />
-                </div>
-                <div>
-                  <p className="text-sm text-slate-400">В работе</p>
-                  <p className="text-3xl font-bold text-white">{pkMetrics.inProgress}</p>
-                </div>
-              </div>
-            </Card>
-
-            <Card
-              className="bg-slate-800/50 border-red-600/50 p-6 cursor-pointer hover:border-red-600 transition-all hover:scale-105 animate-pulse"
-            >
-              <div className="flex items-center gap-4">
-                <div className="bg-gradient-to-br from-red-600 to-red-700 p-4 rounded-xl">
-                  <Icon name="AlertCircle" size={32} className="text-white" />
-                </div>
-                <div>
-                  <p className="text-sm text-slate-400">Просрочено</p>
-                  <p className="text-3xl font-bold text-red-500">{pkMetrics.overdue}</p>
-                </div>
-              </div>
-            </Card>
-          </div>
+          <MetricsCards type="pk" metrics={pkMetrics} />
         )}
       </div>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="bg-slate-800 border-yellow-600/30 text-white max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-yellow-500">{dialogTitle}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            {selectedObservations.length === 0 ? (
-              <p className="text-slate-400 text-center py-8">Наблюдения не найдены</p>
-            ) : (
-              selectedObservations.map((obs) => {
-                const deadlineDate = new Date(obs.deadline);
-                const now = new Date();
-                const isOverdue = deadlineDate < now && obs.status !== 'resolved';
-
-                return (
-                  <Card
-                    key={obs.id}
-                    onClick={() => handleObservationClick(obs)}
-                    className={`p-4 cursor-pointer hover:scale-[1.02] transition-all ${
-                      isOverdue
-                        ? 'bg-red-900/20 border-red-600 animate-pulse'
-                        : obs.status === 'resolved'
-                        ? 'bg-green-900/20 border-green-600'
-                        : 'bg-slate-700/50 border-slate-600'
-                    }`}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <h4
-                          className={`font-bold text-lg mb-2 ${
-                            isOverdue
-                              ? 'text-red-500'
-                              : obs.status === 'resolved'
-                              ? 'text-green-500'
-                              : obs.status === 'in_progress'
-                              ? 'text-black'
-                              : 'text-amber-700'
-                          }`}
-                        >
-                          {obs.doc_number} - Наблюдение №{obs.observation_number}
-                        </h4>
-                        <p className="text-slate-300 mb-2">{obs.description}</p>
-                        <div className="flex gap-4 text-sm text-slate-400">
-                          <span>Ответственный: {obs.responsible_person}</span>
-                          <span>Срок: {new Date(obs.deadline).toLocaleDateString('ru-RU')}</span>
-                        </div>
-                      </div>
-                      <Icon name="ExternalLink" size={20} className="text-yellow-500" />
-                    </div>
-                  </Card>
-                );
-              })
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ObservationsDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        title={dialogTitle}
+        observations={selectedObservations}
+        onObservationClick={handleObservationClick}
+      />
     </div>
   );
 };
