@@ -1,0 +1,1 @@
+ALTER TABLE storage_folders ADD COLUMN parent_id INTEGER REFERENCES storage_folders(id);

@@ -41,7 +41,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 }
             
             cur.execute('''
-                SELECT id, folder_name, created_at 
+                SELECT id, folder_name, parent_id, created_at 
                 FROM storage_folders 
                 WHERE user_id = %s 
                 ORDER BY created_at DESC
@@ -52,7 +52,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 folders.append({
                     'id': row[0],
                     'folder_name': row[1],
-                    'created_at': row[2].isoformat() if row[2] else None
+                    'parent_id': row[2],
+                    'created_at': row[3].isoformat() if row[3] else None
                 })
             
             return {
@@ -69,6 +70,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             if action == 'create':
                 user_id = body.get('user_id')
                 folder_name = body.get('folder_name', '').strip()
+                parent_id = body.get('parent_id')
                 
                 if not user_id or not folder_name:
                     return {
@@ -78,12 +80,26 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                         'isBase64Encoded': False
                     }
                 
+                cur.execute('''
+                    SELECT id FROM storage_folders 
+                    WHERE user_id = %s AND folder_name = %s AND (parent_id = %s OR (parent_id IS NULL AND %s IS NULL))
+                ''', (user_id, folder_name, parent_id, parent_id))
+                
+                existing = cur.fetchone()
+                if existing:
+                    return {
+                        'statusCode': 200,
+                        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                        'body': json.dumps({'folder_id': existing[0], 'message': 'Папка уже существует'}),
+                        'isBase64Encoded': False
+                    }
+                
                 try:
                     cur.execute('''
-                        INSERT INTO storage_folders (user_id, folder_name) 
-                        VALUES (%s, %s) 
+                        INSERT INTO storage_folders (user_id, folder_name, parent_id) 
+                        VALUES (%s, %s, %s) 
                         RETURNING id
-                    ''', (user_id, folder_name))
+                    ''', (user_id, folder_name, parent_id))
                     
                     folder_id = cur.fetchone()[0]
                     conn.commit()

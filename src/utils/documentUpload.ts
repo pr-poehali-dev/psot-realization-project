@@ -38,10 +38,19 @@ export async function uploadDocumentToStorage({
     );
     const deptData = await createDeptResponse.json();
     departmentFolderId = deptData.folder_id;
+    
+    if (!departmentFolderId) {
+      throw new Error('Не удалось создать папку подразделения');
+    }
   }
 
+  const refreshFoldersResponse = await fetch(
+    `https://functions.poehali.dev/89ba96e1-c10f-490a-ad91-54a977d9f798?user_id=${userId}`
+  );
+  const refreshedFoldersData = await refreshFoldersResponse.json();
+
   let documentTypeFolderId;
-  const documentTypeFolder = foldersData.folders?.find(
+  const documentTypeFolder = refreshedFoldersData.folders?.find(
     (f: any) =>
       f.folder_name === documentType && f.parent_id === departmentFolderId
   );
@@ -64,11 +73,15 @@ export async function uploadDocumentToStorage({
     );
     const docTypeData = await createDocTypeResponse.json();
     documentTypeFolderId = docTypeData.folder_id;
+    
+    if (!documentTypeFolderId) {
+      throw new Error('Не удалось создать папку типа документа');
+    }
   }
 
   const formData = new FormData();
   formData.append('file', file);
-  formData.append('folder_id', documentTypeFolderId.toString());
+  formData.append('folder_id', String(documentTypeFolderId));
 
   const uploadResponse = await fetch(
     'https://functions.poehali.dev/cbbbbc82-61fa-4061-88d0-900cb586aea6',
