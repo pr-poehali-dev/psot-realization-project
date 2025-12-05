@@ -174,7 +174,10 @@ const OrganizationSettingsPage = () => {
       const reader = new FileReader();
       reader.onload = async (event) => {
         const base64 = event.target?.result as string;
+        console.log('Размер base64 строки:', (base64.length / 1024 / 1024).toFixed(2), 'МБ');
         setLogoPreview(base64);
+
+        console.log('Отправка логотипа для организации', organization!.id);
 
         const response = await fetch('https://functions.poehali.dev/5fa1bf89-3c17-4533-889a-7273e1ef1e3b', {
           method: 'PUT',
@@ -184,6 +187,9 @@ const OrganizationSettingsPage = () => {
             logo_url: base64
           })
         });
+
+        const responseText = await response.text();
+        console.log('Ответ сервера:', response.status, responseText);
 
         if (response.ok) {
           toast.success('Логотип загружен');
@@ -195,7 +201,7 @@ const OrganizationSettingsPage = () => {
       };
       reader.readAsDataURL(file);
     } catch (error) {
-      console.error(error);
+      console.error('Ошибка загрузки:', error);
       toast.error('Ошибка загрузки логотипа');
       setLogoPreview(organization?.logo_url || null);
     } finally {
