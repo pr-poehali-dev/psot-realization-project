@@ -30,11 +30,19 @@ interface Observation {
 
 const MyMetricsPage = () => {
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<'pab' | 'pk'>('pab');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [metrics, setMetrics] = useState({
     totalAudits: 0,
     totalObservations: 0,
+    resolved: 0,
+    inProgress: 0,
+    overdue: 0,
+  });
+  const [pkMetrics, setPkMetrics] = useState({
+    totalInspections: 0,
+    totalViolations: 0,
     resolved: 0,
     inProgress: 0,
     overdue: 0,
@@ -56,7 +64,97 @@ const MyMetricsPage = () => {
     setDateTo(today.toISOString().split('T')[0]);
 
     loadMetrics(firstDayOfMonth.toISOString().split('T')[0], today.toISOString().split('T')[0]);
+    loadPkMetrics(firstDayOfMonth.toISOString().split('T')[0], today.toISOString().split('T')[0]);
   }, [navigate]);
+
+  const loadPkMetrics = async (from: string, to: string) => {
+    try {
+      const mockPkViolations = [
+        {
+          id: 1,
+          doc_number: 'ПК-001-25',
+          doc_date: '2025-12-02',
+          description: 'Нарушение правил охраны труда',
+          status: 'new',
+          deadline: '2025-12-20',
+          responsible_person: 'Смирнов Дмитрий Александрович',
+        },
+        {
+          id: 2,
+          doc_number: 'ПК-002-25',
+          doc_date: '2025-11-25',
+          description: 'Отсутствие СИЗ на рабочем месте',
+          status: 'in_progress',
+          deadline: '2025-12-18',
+          responsible_person: 'Волков Сергей Николаевич',
+        },
+        {
+          id: 3,
+          doc_number: 'ПК-003-25',
+          doc_date: '2025-11-30',
+          description: 'Нарушение технологического процесса',
+          status: 'resolved',
+          deadline: '2025-12-15',
+          responsible_person: 'Морозов Игорь Валерьевич',
+        },
+        {
+          id: 4,
+          doc_number: 'ПК-004-25',
+          doc_date: '2025-11-15',
+          description: 'Просроченное нарушение - отсутствие инструктажа',
+          status: 'new',
+          deadline: '2025-11-20',
+          responsible_person: 'Павлов Андрей Викторович',
+        },
+      ];
+
+      const fromDate = new Date(from);
+      const toDate = new Date(to);
+      toDate.setHours(23, 59, 59, 999);
+
+      const filteredViolations = mockPkViolations.filter(v => {
+        const vDate = new Date(v.doc_date);
+        return vDate >= fromDate && vDate <= toDate;
+      });
+
+      const uniqueInspections = new Set(filteredViolations.map(v => v.doc_number));
+
+      const now = new Date();
+      let resolved = 0;
+      let inProgress = 0;
+      let overdue = 0;
+
+      filteredViolations.forEach(v => {
+        const deadlineDate = new Date(v.deadline);
+        if (v.status === 'resolved') {
+          resolved++;
+        } else if (v.status === 'in_progress') {
+          if (deadlineDate < now) {
+            overdue++;
+          } else {
+            inProgress++;
+          }
+        } else if (v.status === 'new') {
+          if (deadlineDate < now) {
+            overdue++;
+          } else {
+            inProgress++;
+          }
+        }
+      });
+
+      setPkMetrics({
+        totalInspections: uniqueInspections.size,
+        totalViolations: filteredViolations.length,
+        resolved,
+        inProgress,
+        overdue,
+      });
+    } catch (error) {
+      console.error('Error loading PK metrics:', error);
+      toast.error('Ошибка загрузки статистики ПК');
+    }
+  };
 
   const loadMetrics = async (from: string, to: string) => {
     try {
@@ -357,7 +455,10 @@ const MyMetricsPage = () => {
               />
             </div>
             <Button
-              onClick={() => loadMetrics(dateFrom, dateTo)}
+              onClick={() => {
+                loadMetrics(dateFrom, dateTo);
+                loadPkMetrics(dateFrom, dateTo);
+              }}
               className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
             >
               <Icon name="Search" size={20} className="mr-2" />
@@ -366,7 +467,33 @@ const MyMetricsPage = () => {
           </div>
         </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="flex gap-4 mb-6">
+          <Button
+            onClick={() => setActiveTab('pab')}
+            className={`flex-1 py-6 text-lg font-bold transition-all ${
+              activeTab === 'pab'
+                ? 'bg-gradient-to-r from-red-600 to-red-700 text-white'
+                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+            }`}
+          >
+            <Icon name="FileText" size={24} className="mr-2" />
+            Мои показатели по ПАБ
+          </Button>
+          <Button
+            onClick={() => setActiveTab('pk')}
+            className={`flex-1 py-6 text-lg font-bold transition-all ${
+              activeTab === 'pk'
+                ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white'
+                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+            }`}
+          >
+            <Icon name="Shield" size={24} className="mr-2" />
+            Мои показатели по ПК
+          </Button>
+        </div>
+
+        {activeTab === 'pab' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <Card className="bg-slate-800/50 border-yellow-600/30 p-6">
             <div className="flex items-center gap-4">
               <div className="bg-gradient-to-br from-yellow-600 to-yellow-700 p-4 rounded-xl">
@@ -439,6 +566,79 @@ const MyMetricsPage = () => {
             </div>
           </Card>
         </div>
+        )}
+
+        {activeTab === 'pk' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Card className="bg-slate-800/50 border-yellow-600/30 p-6">
+              <div className="flex items-center gap-4">
+                <div className="bg-gradient-to-br from-yellow-600 to-yellow-700 p-4 rounded-xl">
+                  <Icon name="Shield" size={32} className="text-white" />
+                </div>
+                <div>
+                  <p className="text-sm text-slate-400">Всего проверок</p>
+                  <p className="text-3xl font-bold text-yellow-500">{pkMetrics.totalInspections}</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card
+              className="bg-slate-800/50 border-yellow-600/30 p-6 cursor-pointer hover:border-yellow-600 transition-all hover:scale-105"
+            >
+              <div className="flex items-center gap-4">
+                <div className="bg-gradient-to-br from-amber-700 to-amber-800 p-4 rounded-xl">
+                  <Icon name="AlertTriangle" size={32} className="text-white" />
+                </div>
+                <div>
+                  <p className="text-sm text-slate-400">Всего нарушений</p>
+                  <p className="text-3xl font-bold" style={{ color: '#8B4513' }}>{pkMetrics.totalViolations}</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card
+              className="bg-slate-800/50 border-yellow-600/30 p-6 cursor-pointer hover:border-yellow-600 transition-all hover:scale-105"
+            >
+              <div className="flex items-center gap-4">
+                <div className="bg-gradient-to-br from-green-600 to-green-700 p-4 rounded-xl">
+                  <Icon name="CheckCircle" size={32} className="text-white" />
+                </div>
+                <div>
+                  <p className="text-sm text-slate-400">Устранено</p>
+                  <p className="text-3xl font-bold text-green-500">{pkMetrics.resolved}</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card
+              className="bg-slate-800/50 border-yellow-600/30 p-6 cursor-pointer hover:border-yellow-600 transition-all hover:scale-105"
+            >
+              <div className="flex items-center gap-4">
+                <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-4 rounded-xl">
+                  <Icon name="Clock" size={32} className="text-white" />
+                </div>
+                <div>
+                  <p className="text-sm text-slate-400">В работе</p>
+                  <p className="text-3xl font-bold text-black">{pkMetrics.inProgress}</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card
+              className="bg-slate-800/50 border-red-600/50 p-6 cursor-pointer hover:border-red-600 transition-all hover:scale-105 animate-pulse"
+            >
+              <div className="flex items-center gap-4">
+                <div className="bg-gradient-to-br from-red-600 to-red-700 p-4 rounded-xl">
+                  <Icon name="AlertCircle" size={32} className="text-white" />
+                </div>
+                <div>
+                  <p className="text-sm text-slate-400">Просрочено</p>
+                  <p className="text-3xl font-bold text-red-500">{pkMetrics.overdue}</p>
+                </div>
+              </div>
+            </Card>
+          </div>
+        )}
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
