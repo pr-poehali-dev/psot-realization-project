@@ -72,6 +72,46 @@ const CreateOrganizationPage = () => {
     }
   };
 
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 800;
+          const MAX_HEIGHT = 800;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
+          resolve(compressedBase64);
+        };
+        img.onerror = reject;
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -81,25 +121,26 @@ const CreateOrganizationPage = () => {
       return;
     }
 
-    const maxSize = 5 * 1024 * 1024;
+    const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
-      toast.error('Размер изображения не должен превышать 5 МБ');
+      toast.error('Размер изображения не должен превышать 10 МБ');
       return;
     }
 
     setUploadingLogo(true);
 
     try {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const base64 = event.target?.result as string;
-        setCustomLogo(base64);
-        setSelectedLogo(null);
-        toast.success('Логотип загружен');
-      };
-      reader.readAsDataURL(file);
+      toast.info('Сжатие изображения...');
+      const compressedBase64 = await compressImage(file);
+      
+      console.log('Исходный размер:', (file.size / 1024).toFixed(2), 'КБ');
+      console.log('Размер после сжатия:', (compressedBase64.length / 1024).toFixed(2), 'КБ');
+      
+      setCustomLogo(compressedBase64);
+      setSelectedLogo(null);
+      toast.success('Логотип загружен и сжат');
     } catch (error) {
-      console.error(error);
+      console.error('Ошибка сжатия:', error);
       toast.error('Ошибка загрузки логотипа');
     } finally {
       setUploadingLogo(false);

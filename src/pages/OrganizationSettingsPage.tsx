@@ -153,6 +153,46 @@ const OrganizationSettingsPage = () => {
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 800;
+          const MAX_HEIGHT = 800;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
+          resolve(compressedBase64);
+        };
+        img.onerror = reject;
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -162,44 +202,41 @@ const OrganizationSettingsPage = () => {
       return;
     }
 
-    const maxSize = 5 * 1024 * 1024; // 5 МБ
+    const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
-      toast.error('Размер изображения не должен превышать 5 МБ');
+      toast.error('Размер изображения не должен превышать 10 МБ');
       return;
     }
 
     setUploadingLogo(true);
 
     try {
-      const reader = new FileReader();
-      reader.onload = async (event) => {
-        const base64 = event.target?.result as string;
-        console.log('Размер base64 строки:', (base64.length / 1024 / 1024).toFixed(2), 'МБ');
-        setLogoPreview(base64);
+      toast.info('Сжатие изображения...');
+      const compressedBase64 = await compressImage(file);
+      
+      console.log('Исходный размер:', (file.size / 1024).toFixed(2), 'КБ');
+      console.log('Размер после сжатия:', (compressedBase64.length / 1024).toFixed(2), 'КБ');
+      
+      setLogoPreview(compressedBase64);
 
-        console.log('Отправка логотипа для организации', organization!.id);
+      const response = await fetch('https://functions.poehali.dev/5fa1bf89-3c17-4533-889a-7273e1ef1e3b', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: organization!.id,
+          logo_url: compressedBase64
+        })
+      });
 
-        const response = await fetch('https://functions.poehali.dev/5fa1bf89-3c17-4533-889a-7273e1ef1e3b', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            id: organization!.id,
-            logo_url: base64
-          })
-        });
-
-        const responseText = await response.text();
-        console.log('Ответ сервера:', response.status, responseText);
-
-        if (response.ok) {
-          toast.success('Логотип загружен');
-          setOrganization(prev => prev ? { ...prev, logo_url: base64 } : null);
-        } else {
-          toast.error('Не удалось загрузить логотип');
-          setLogoPreview(organization?.logo_url || null);
-        }
-      };
-      reader.readAsDataURL(file);
+      if (response.ok) {
+        toast.success('Логотип загружен');
+        setOrganization(prev => prev ? { ...prev, logo_url: compressedBase64 } : null);
+      } else {
+        const errorText = await response.text();
+        console.error('Ошибка сервера:', response.status, errorText);
+        toast.error('Не удалось загрузить логотип');
+        setLogoPreview(organization?.logo_url || null);
+      }
     } catch (error) {
       console.error('Ошибка загрузки:', error);
       toast.error('Ошибка загрузки логотипа');
