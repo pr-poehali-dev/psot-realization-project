@@ -33,17 +33,50 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             
             email = body_data.get('email')
             password = body_data.get('password')
-            fio = body_data.get('fio')
+            code = body_data.get('code')
+            full_name = body_data.get('full_name')
+            fio = body_data.get('fio') or full_name
             company = body_data.get('company')
             subdivision = body_data.get('subdivision')
             position = body_data.get('position')
+            
+            if not email or not password or not fio:
+                return {
+                    'statusCode': 400,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'isBase64Encoded': False,
+                    'body': json.dumps({'success': False, 'error': 'Email, password and full name are required'})
+                }
             
             password_hash = hashlib.sha256(password.encode()).hexdigest()
             
             conn = psycopg2.connect(os.environ['DATABASE_URL'])
             cur = conn.cursor()
             
-            cur.execute("SELECT id FROM users WHERE email = %s", (email,))
+            organization_id = None
+            if code:
+                cur.execute("SELECT id, name FROM t_p80499285_psot_realization_pro.organizations WHERE registration_code = %s", (code,))
+                org_result = cur.fetchone()
+                if org_result:
+                    organization_id = org_result[0]
+                    company = org_result[1]
+                else:
+                    cur.close()
+                    conn.close()
+                    return {
+                        'statusCode': 400,
+                        'headers': {
+                            'Content-Type': 'application/json',
+                            'Access-Control-Allow-Origin': '*'
+                        },
+                        'isBase64Encoded': False,
+                        'body': json.dumps({'success': False, 'error': 'Invalid registration code'})
+                    }
+            
+            cur.execute("SELECT id FROM t_p80499285_psot_realization_pro.users WHERE email = %s", (email,))
             existing = cur.fetchone()
             
             if existing:
@@ -60,13 +93,13 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 }
             
             cur.execute(
-                "INSERT INTO users (email, password_hash, fio, company, subdivision, position) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
-                (email, password_hash, fio, company, subdivision, position)
+                "INSERT INTO t_p80499285_psot_realization_pro.users (email, password_hash, fio, company, subdivision, position, organization_id, role) VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
+                (email, password_hash, fio, company, subdivision, position, organization_id, 'user')
             )
             user_id = cur.fetchone()[0]
             
             cur.execute(
-                "INSERT INTO user_stats (user_id) VALUES (%s)",
+                "INSERT INTO t_p80499285_psot_realization_pro.user_stats (user_id) VALUES (%s)",
                 (user_id,)
             )
             

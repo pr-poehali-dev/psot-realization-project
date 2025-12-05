@@ -50,7 +50,7 @@ const Register = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('https://functions.poehali.dev/a3764e9e-47c7-4c19-b7dd-fdb95f4b7fa9', {
+      const response = await fetch('https://functions.poehali.dev/eb523ac0-0903-4780-8f5d-7e0546c1eda5', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
