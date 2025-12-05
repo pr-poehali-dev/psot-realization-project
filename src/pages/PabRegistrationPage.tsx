@@ -220,6 +220,32 @@ export default function PabRegistrationPage() {
         }
       }
 
+      // Автоматическое создание папки в хранилище для подразделения
+      if (department) {
+        const userId = localStorage.getItem('userId');
+        try {
+          // Проверяем, существует ли папка с названием подразделения
+          const getFoldersResponse = await fetch(`https://functions.poehali.dev/89ba96e1-c10f-490a-ad91-54a977d9f798?user_id=${userId}`);
+          const foldersData = await getFoldersResponse.json();
+          const departmentFolder = foldersData.folders?.find((f: any) => f.folder_name === department);
+          
+          // Если папки нет - создаем
+          if (!departmentFolder) {
+            await fetch('https://functions.poehali.dev/89ba96e1-c10f-490a-ad91-54a977d9f798', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'create',
+                user_id: userId,
+                folder_name: department
+              })
+            });
+          }
+        } catch (error) {
+          console.log('Failed to create department folder:', error);
+        }
+      }
+
       toast.success('ПАБ успешно зарегистрирован и отправлен');
       navigate('/');
     } catch (error) {
