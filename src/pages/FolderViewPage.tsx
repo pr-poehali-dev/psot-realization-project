@@ -28,6 +28,8 @@ const FolderViewPage = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<StorageFile | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewFile, setPreviewFile] = useState<StorageFile | null>(null);
 
   useEffect(() => {
     const userId = localStorage.getItem('userId');
@@ -150,6 +152,20 @@ const FolderViewPage = () => {
     setIsDeleteDialogOpen(true);
   };
 
+  const openPreview = (file: StorageFile) => {
+    setPreviewFile(file);
+    setIsPreviewOpen(true);
+  };
+
+  const isPreviewable = (fileType: string): boolean => {
+    return fileType.startsWith('image/') || 
+           fileType.startsWith('video/') || 
+           fileType.startsWith('audio/') ||
+           fileType === 'application/pdf' ||
+           fileType === 'text/plain' ||
+           fileType === 'text/html';
+  };
+
   const formatFileSize = (bytes: number): string => {
     if (bytes < 1024) return bytes + ' Б';
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' КБ';
@@ -242,7 +258,8 @@ const FolderViewPage = () => {
             {files.map((file) => (
               <Card
                 key={file.id}
-                className="group relative overflow-hidden bg-slate-800/50 border-yellow-600/30 hover:border-yellow-600 transition-all"
+                onClick={() => isPreviewable(file.file_type) && openPreview(file)}
+                className="group relative overflow-hidden bg-slate-800/50 border-yellow-600/30 hover:border-yellow-600 transition-all cursor-pointer"
               >
                 <div className="p-6">
                   <div className="flex items-start justify-between mb-4">
@@ -250,16 +267,38 @@ const FolderViewPage = () => {
                       <Icon name={getFileIcon(file.file_type)} size={32} className="text-white" />
                     </div>
                     <div className="flex gap-2">
+                      {isPreviewable(file.file_type) && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openPreview(file);
+                          }}
+                        >
+                          <Icon name="Eye" size={20} />
+                        </Button>
+                      )}
                       <Button
-                        onClick={() => window.open(file.file_url, '_blank')}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const link = document.createElement('a');
+                          link.href = file.file_url;
+                          link.download = file.file_name;
+                          link.click();
+                        }}
                         variant="ghost"
                         size="icon"
-                        className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
+                        className="text-slate-400 hover:text-yellow-500 hover:bg-yellow-500/10"
                       >
                         <Icon name="Download" size={20} />
                       </Button>
                       <Button
-                        onClick={() => openDeleteDialog(file)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openDeleteDialog(file);
+                        }}
                         variant="ghost"
                         size="icon"
                         className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
@@ -307,6 +346,85 @@ const FolderViewPage = () => {
               className="bg-red-600 hover:bg-red-700 text-white"
             >
               Удалить
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+        <DialogContent className="bg-slate-900 border-yellow-600/30 max-w-4xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle className="text-white">{previewFile?.file_name}</DialogTitle>
+            <DialogDescription className="text-slate-400">
+              {previewFile && formatFileSize(previewFile.file_size)} • {previewFile?.file_type}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4 overflow-auto max-h-[70vh]">
+            {previewFile && (
+              <>
+                {previewFile.file_type.startsWith('image/') && (
+                  <img 
+                    src={previewFile.file_url} 
+                    alt={previewFile.file_name}
+                    className="w-full h-auto rounded-lg"
+                  />
+                )}
+                {previewFile.file_type.startsWith('video/') && (
+                  <video 
+                    src={previewFile.file_url} 
+                    controls
+                    className="w-full rounded-lg"
+                  >
+                    Ваш браузер не поддерживает видео
+                  </video>
+                )}
+                {previewFile.file_type.startsWith('audio/') && (
+                  <audio 
+                    src={previewFile.file_url} 
+                    controls
+                    className="w-full"
+                  >
+                    Ваш браузер не поддерживает аудио
+                  </audio>
+                )}
+                {previewFile.file_type === 'application/pdf' && (
+                  <iframe
+                    src={previewFile.file_url}
+                    className="w-full h-[600px] rounded-lg"
+                    title={previewFile.file_name}
+                  />
+                )}
+                {(previewFile.file_type === 'text/plain' || previewFile.file_type === 'text/html') && (
+                  <iframe
+                    src={previewFile.file_url}
+                    className="w-full h-[600px] rounded-lg bg-white"
+                    title={previewFile.file_name}
+                  />
+                )}
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsPreviewOpen(false)}
+              className="border-slate-600 text-slate-300"
+            >
+              Закрыть
+            </Button>
+            <Button
+              onClick={() => {
+                if (previewFile) {
+                  const link = document.createElement('a');
+                  link.href = previewFile.file_url;
+                  link.download = previewFile.file_name;
+                  link.click();
+                }
+              }}
+              className="bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700 text-white"
+            >
+              <Icon name="Download" size={20} className="mr-2" />
+              Скачать
             </Button>
           </DialogFooter>
         </DialogContent>
