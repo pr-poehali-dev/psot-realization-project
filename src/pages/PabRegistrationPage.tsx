@@ -138,10 +138,22 @@ export default function PabRegistrationPage() {
       return;
     }
 
+    if (!department) {
+      toast.error('Выберите подразделение');
+      return;
+    }
+
     setLoading(true);
 
     try {
       const userId = localStorage.getItem('userId');
+      
+      if (!userId) {
+        toast.error('Пользователь не авторизован');
+        setLoading(false);
+        return;
+      }
+      
       let photoUrl = '';
       
       if (photoFile && userId) {
@@ -219,8 +231,9 @@ export default function PabRegistrationPage() {
       toast.success('ПАБ успешно зарегистрирован и отправлен');
       navigate('/');
     } catch (error) {
-      toast.error('Не удалось сохранить ПАБ');
-      console.error(error);
+      const errorMessage = error instanceof Error ? error.message : 'Неизвестная ошибка';
+      toast.error(`Не удалось сохранить ПАБ: ${errorMessage}`);
+      console.error('ПАБ submission error:', error);
     } finally {
       setLoading(false);
     }
