@@ -13,6 +13,7 @@ interface User {
   id: number;
   email: string;
   fio: string;
+  display_name?: string;
   company: string;
   subdivision: string;
   position: string;
@@ -51,7 +52,12 @@ const UsersManagement = () => {
 
   const loadUsers = async () => {
     try {
-      const response = await fetch('https://functions.poehali.dev/9d7b143e-21c6-4e84-95b5-302b35a8eedf?action=list');
+      const role = localStorage.getItem('userRole');
+      const response = await fetch('https://functions.poehali.dev/9d7b143e-21c6-4e84-95b5-302b35a8eedf?action=list', {
+        headers: {
+          'X-User-Role': role || ''
+        }
+      });
       const data = await response.json();
       if (data.success) {
         setUsers(data.users);
@@ -331,7 +337,9 @@ const UsersManagement = () => {
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-3">
-                      <h3 className="text-xl font-bold text-white">{user.fio}</h3>
+                      <h3 className="text-xl font-bold text-white">
+                        {isSuperAdmin ? user.fio : (user.display_name || user.fio)}
+                      </h3>
                       <span className={`px-3 py-1 rounded-full text-xs font-bold ${getRoleBadgeColor(user.role)}`}>
                         {getRoleLabel(user.role)}
                       </span>

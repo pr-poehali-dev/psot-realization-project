@@ -33,31 +33,36 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         cur = conn.cursor()
         
         if action == 'list':
+            headers = event.get('headers', {})
+            user_role = headers.get('X-User-Role', '')
+            
             cur.execute("""
-                SELECT u.id, u.email, u.fio, u.company, u.subdivision, u.position, u.role, u.created_at,
+                SELECT u.id, u.email, u.fio, u.display_name, u.company, u.subdivision, u.position, u.role, u.created_at,
                        COALESCE(s.registered_count, 0) as registered_count,
                        COALESCE(s.online_count, 0) as online_count,
                        COALESCE(s.offline_count, 0) as offline_count
-                FROM users u
-                LEFT JOIN user_stats s ON u.id = s.user_id
+                FROM t_p80499285_psot_realization_pro.users u
+                LEFT JOIN t_p80499285_psot_realization_pro.user_stats s ON u.id = s.user_id
                 ORDER BY u.created_at DESC
             """)
             
             users = []
             for row in cur.fetchall():
+                is_superadmin = user_role == 'superadmin'
                 users.append({
                     'id': row[0],
                     'email': row[1],
-                    'fio': row[2],
-                    'company': row[3],
-                    'subdivision': row[4],
-                    'position': row[5],
-                    'role': row[6],
-                    'created_at': row[7].isoformat() if row[7] else None,
+                    'fio': row[2] if is_superadmin else row[3],
+                    'display_name': row[3],
+                    'company': row[4],
+                    'subdivision': row[5],
+                    'position': row[6],
+                    'role': row[7],
+                    'created_at': row[8].isoformat() if row[8] else None,
                     'stats': {
-                        'registered_count': row[8],
-                        'online_count': row[9],
-                        'offline_count': row[10]
+                        'registered_count': row[9],
+                        'online_count': row[10],
+                        'offline_count': row[11]
                     }
                 })
             
@@ -81,7 +86,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     COUNT(CASE WHEN role = 'user' THEN 1 END) as users_count,
                     COUNT(CASE WHEN role = 'admin' THEN 1 END) as admins_count,
                     COUNT(CASE WHEN role = 'superadmin' THEN 1 END) as superadmins_count
-                FROM users
+                FROM t_p80499285_psot_realization_pro.users
             """)
             
             row = cur.fetchone()
@@ -117,7 +122,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         
         if action == 'update_role':
             new_role = body_data.get('role')
-            cur.execute("UPDATE users SET role = %s WHERE id = %s", (new_role, user_id))
+            new_role_escaped = new_role.replace("'", "''")
+            cur.execute(f"UPDATE t_p80499285_psot_realization_pro.users SET role = '{new_role_escaped}' WHERE id = {user_id}")
             conn.commit()
             
         elif action == 'update_profile':
@@ -126,19 +132,30 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             subdivision = body_data.get('subdivision')
             position = body_data.get('position')
             
-            cur.execute("""
-                UPDATE users 
-                SET fio = %s, company = %s, subdivision = %s, position = %s 
-                WHERE id = %s
-            """, (fio, company, subdivision, position, user_id))
+            fio_escaped = fio.replace("'", "''") if fio else ''
+            company_escaped = company.replace("'", "''") if company else ''
+            subdivision_escaped = subdivision.replace("'", "''") if subdivision else ''
+            position_escaped = position.replace("'", "''") if position else ''
+            
+            fio_sql = f"'{fio_escaped}'" if fio else 'NULL'
+            company_sql = f"'{company_escaped}'" if company else 'NULL'
+            subdivision_sql = f"'{subdivision_escaped}'" if subdivision else 'NULL'
+            position_sql = f"'{position_escaped}'" if position else 'NULL'
+            
+            cur.execute(f"""
+                UPDATE t_p80499285_psot_realization_pro.users 
+                SET fio = {fio_sql}, company = {company_sql}, subdivision = {subdivision_sql}, position = {position_sql} 
+                WHERE id = {user_id}
+            """)
             conn.commit()
             
         elif action == 'change_email':
             import hashlib
             
             new_email = body_data.get('newEmail')
+            new_email_escaped = new_email.replace("'", "''")
             
-            cur.execute("SELECT id FROM users WHERE email = %s AND id != %s", (new_email, user_id))
+            cur.execute(f"SELECT id FROM t_p80499285_psot_realization_pro.users WHERE email = '{new_email_escaped}' AND id != {user_id}")
             if cur.fetchone():
                 cur.close()
                 conn.close()
@@ -152,7 +169,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'body': json.dumps({'success': False, 'error': 'Email already exists'})
                 }
             
-            cur.execute("UPDATE users SET email = %s WHERE id = %s", (new_email, user_id))
+            cur.execute(f"UPDATE t_p80499285_psot_realization_pro.users SET email = '{new_email_escaped}' WHERE id = {user_id}")
             conn.commit()
             
         elif action == 'change_password':
@@ -161,7 +178,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             new_password = body_data.get('newPassword')
             new_hash = hashlib.sha256(new_password.encode()).hexdigest()
             
-            cur.execute("UPDATE users SET password_hash = %s WHERE id = %s", (new_hash, user_id))
+            cur.execute(f"UPDATE t_p80499285_psot_realization_pro.users SET password_hash = '{new_hash}' WHERE id = {user_id}")
             conn.commit()
         
         cur.close()
@@ -198,7 +215,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             conn = psycopg2.connect(os.environ['DATABASE_URL'])
             cur = conn.cursor()
             
-            cur.execute("SELECT id FROM users WHERE email = %s", (email,))
+            email_escaped = email.replace("'", "''")
+            cur.execute(f"SELECT id FROM t_p80499285_psot_realization_pro.users WHERE email = '{email_escaped}'")
             if cur.fetchone():
                 cur.close()
                 conn.close()
@@ -212,15 +230,26 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'body': json.dumps({'success': False, 'error': 'Email already exists'})
                 }
             
-            cur.execute("""
-                INSERT INTO users (email, password_hash, fio, company, subdivision, position, role) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s) 
+            fio_escaped = fio.replace("'", "''") if fio else ''
+            company_escaped = company.replace("'", "''") if company else ''
+            subdivision_escaped = subdivision.replace("'", "''") if subdivision else ''
+            position_escaped = position.replace("'", "''") if position else ''
+            role_escaped = role.replace("'", "''")
+            
+            fio_sql = f"'{fio_escaped}'" if fio else 'NULL'
+            company_sql = f"'{company_escaped}'" if company else 'NULL'
+            subdivision_sql = f"'{subdivision_escaped}'" if subdivision else 'NULL'
+            position_sql = f"'{position_escaped}'" if position else 'NULL'
+            
+            cur.execute(f"""
+                INSERT INTO t_p80499285_psot_realization_pro.users (email, password_hash, fio, company, subdivision, position, role) 
+                VALUES ('{email_escaped}', '{password_hash}', {fio_sql}, {company_sql}, {subdivision_sql}, {position_sql}, '{role_escaped}') 
                 RETURNING id
-            """, (email, password_hash, fio, company, subdivision, position, role))
+            """)
             
             user_id = cur.fetchone()[0]
             
-            cur.execute("INSERT INTO user_stats (user_id) VALUES (%s)", (user_id,))
+            cur.execute(f"INSERT INTO t_p80499285_psot_realization_pro.user_stats (user_id) VALUES ({user_id})")
             
             conn.commit()
             cur.close()
@@ -245,11 +274,11 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         conn = psycopg2.connect(os.environ['DATABASE_URL'])
         cur = conn.cursor()
         
-        cur.execute("DELETE FROM user_stats WHERE user_id = %s", (user_id,))
-        cur.execute("DELETE FROM prescriptions WHERE user_id = %s", (user_id,))
-        cur.execute("DELETE FROM audits WHERE user_id = %s", (user_id,))
-        cur.execute("DELETE FROM violations WHERE user_id = %s", (user_id,))
-        cur.execute("DELETE FROM users WHERE id = %s", (user_id,))
+        cur.execute(f"DELETE FROM t_p80499285_psot_realization_pro.user_stats WHERE user_id = {user_id}")
+        cur.execute(f"DELETE FROM t_p80499285_psot_realization_pro.prescriptions WHERE user_id = {user_id}")
+        cur.execute(f"DELETE FROM t_p80499285_psot_realization_pro.audits WHERE user_id = {user_id}")
+        cur.execute(f"DELETE FROM t_p80499285_psot_realization_pro.violations WHERE user_id = {user_id}")
+        cur.execute(f"DELETE FROM t_p80499285_psot_realization_pro.users WHERE id = {user_id}")
         
         conn.commit()
         cur.close()

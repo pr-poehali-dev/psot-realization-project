@@ -51,6 +51,30 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'body': json.dumps({'success': False, 'error': 'Email, password and full name are required'})
                 }
             
+            fio_parts = fio.strip().split()
+            if len(fio_parts) < 3:
+                return {
+                    'statusCode': 400,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'isBase64Encoded': False,
+                    'body': json.dumps({'success': False, 'error': 'ФИО должно содержать Фамилию, Имя и Отчество (три слова)'})
+                }
+            
+            for part in fio_parts[:3]:
+                if not part[0].isupper():
+                    return {
+                        'statusCode': 400,
+                        'headers': {
+                            'Content-Type': 'application/json',
+                            'Access-Control-Allow-Origin': '*'
+                        },
+                        'isBase64Encoded': False,
+                        'body': json.dumps({'success': False, 'error': 'Каждое слово в ФИО должно начинаться с заглавной буквы'})
+                    }
+            
             password_hash = hashlib.sha256(password.encode()).hexdigest()
             
             conn = psycopg2.connect(os.environ['DATABASE_URL'])
@@ -111,6 +135,16 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             )
             user_id = cur.fetchone()[0]
             
+            surname_initial = fio_parts[0][0].upper()
+            name_initial = fio_parts[1][0].upper()
+            patronymic_initial = fio_parts[2][0].upper()
+            display_name = f"ID№{str(user_id).zfill(5)}-{surname_initial}.{name_initial}.{patronymic_initial}."
+            display_name_escaped = display_name.replace("'", "''")
+            
+            cur.execute(
+                f"UPDATE t_p80499285_psot_realization_pro.users SET display_name = '{display_name_escaped}' WHERE id = {user_id}"
+            )
+            
             cur.execute(
                 f"INSERT INTO t_p80499285_psot_realization_pro.user_stats (user_id) VALUES ({user_id})"
             )
@@ -126,7 +160,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'Access-Control-Allow-Origin': '*'
                 },
                 'isBase64Encoded': False,
-                'body': json.dumps({'success': True, 'userId': user_id})
+                'body': json.dumps({'success': True, 'userId': user_id, 'displayName': display_name})
             }
         
         elif action == 'login':

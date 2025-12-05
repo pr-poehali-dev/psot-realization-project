@@ -12,6 +12,7 @@ interface UserProfile {
   id: number;
   email: string;
   fio: string;
+  display_name?: string;
   company: string;
   subdivision: string;
   position: string;
@@ -189,7 +190,9 @@ const Profile = () => {
                 <Icon name="User" size={32} className="text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-white">Мой профиль</h1>
+                <h1 className="text-3xl font-bold text-white">
+                  {profile.role === 'superadmin' ? profile.fio : (profile.display_name || profile.fio)}
+                </h1>
                 <p className="text-yellow-500">{profile.email}</p>
               </div>
             </div>
