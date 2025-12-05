@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import Icon from '@/components/ui/icon';
 import { toast } from 'sonner';
+import BlockUserDialog from '@/components/BlockUserDialog';
 
 interface User {
   id: number;
@@ -30,6 +31,8 @@ const OrganizationUsersPage = () => {
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<'name' | 'activity' | 'records'>('name');
+  const [blockDialogOpen, setBlockDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   useEffect(() => {
     const role = localStorage.getItem('userRole');
@@ -289,6 +292,20 @@ const OrganizationUsersPage = () => {
                         )}
                       </div>
                     </div>
+
+                    <div className="flex flex-col gap-2 ml-4">
+                      <Button
+                        onClick={() => {
+                          setSelectedUser(user);
+                          setBlockDialogOpen(true);
+                        }}
+                        size="sm"
+                        className="bg-red-600 hover:bg-red-700"
+                      >
+                        <Icon name="Ban" size={16} className="mr-1" />
+                        Заблокировать
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -296,6 +313,20 @@ const OrganizationUsersPage = () => {
           )}
         </Card>
       </div>
+
+      {selectedUser && (
+        <BlockUserDialog
+          user={selectedUser}
+          isOpen={blockDialogOpen}
+          onClose={() => {
+            setBlockDialogOpen(false);
+            setSelectedUser(null);
+          }}
+          onSuccess={() => {
+            loadData();
+          }}
+        />
+      )}
     </div>
   );
 };

@@ -1,0 +1,14 @@
+{
+  "tests": [
+    {
+      "name": "Get user block status",
+      "method": "GET",
+      "path": "/?entity_type=user&entity_id=1",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "is_blocked": "boolean"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

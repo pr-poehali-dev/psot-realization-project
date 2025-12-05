@@ -1,4 +1,5 @@
 {
+  "block-management": "https://functions.poehali.dev/c770ffda-5900-4484-9592-2c6fe9cf57aa",
   "modules": "https://functions.poehali.dev/f0017dad-45ab-4a18-a80f-50544a6a298f",
   "tariffs": "https://functions.poehali.dev/78e6bfda-487d-4a51-a368-1870e67aba1a",
   "organization-modules": "https://functions.poehali.dev/ed581da1-7f08-4cc4-bfed-44137839b869",
@@ -9,7 +10,6 @@
   "org-users-select": "https://functions.poehali.dev/7f32d60e-dee5-4b28-901a-10984045d99e",
   "org-users": "https://functions.poehali.dev/bceeaee7-5cfa-418c-9c0d-0a61668ab1a4",
   "org-modules": "https://functions.poehali.dev/a4f6bfe1-8f77-48b2-b6dd-70ac0a1c023a",
-  "subscription-plans": "https://functions.poehali.dev/74e617c7-d1e0-48d6-a5a6-0d25d554958e",
   "organizations": "https://functions.poehali.dev/5fa1bf89-3c17-4533-889a-7273e1ef1e3b",
   "pab-dictionaries": "https://functions.poehali.dev/8a3ae143-7ece-49b7-9863-4341c4bef960",
   "pab-submit": "https://functions.poehali.dev/5054985e-ff94-4512-8302-c02f01b09d66",

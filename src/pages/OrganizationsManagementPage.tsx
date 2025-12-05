@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import Icon from '@/components/ui/icon';
 import { toast } from 'sonner';
+import BlockOrganizationDialog from '@/components/BlockOrganizationDialog';
 
 interface Organization {
   id: number;
@@ -22,6 +23,8 @@ const OrganizationsManagementPage = () => {
   const navigate = useNavigate();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
+  const [blockDialogOpen, setBlockDialogOpen] = useState(false);
+  const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
 
   useEffect(() => {
     const role = localStorage.getItem('userRole');
@@ -221,6 +224,16 @@ const OrganizationsManagementPage = () => {
                       Модули
                     </Button>
                     <Button
+                      onClick={() => {
+                        setSelectedOrg(org);
+                        setBlockDialogOpen(true);
+                      }}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      <Icon name="Ban" size={20} className="mr-2" />
+                      Заблокировать
+                    </Button>
+                    <Button
                       onClick={() => navigate(`/organization-settings/${org.id}`)}
                       className="bg-blue-600 hover:bg-blue-700"
                     >
@@ -234,6 +247,20 @@ const OrganizationsManagementPage = () => {
           </div>
         )}
       </div>
+
+      {selectedOrg && (
+        <BlockOrganizationDialog
+          organization={selectedOrg}
+          isOpen={blockDialogOpen}
+          onClose={() => {
+            setBlockDialogOpen(false);
+            setSelectedOrg(null);
+          }}
+          onSuccess={() => {
+            loadOrganizations();
+          }}
+        />
+      )}
     </div>
   );
 };

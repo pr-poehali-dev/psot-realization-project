@@ -118,7 +118,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 print(f"[AUTH DEBUG] User NOT found in DB")
             
             cur.execute(
-                "SELECT id, fio, company, position, role, organization_id FROM users WHERE email = %s AND password_hash = %s",
+                "SELECT u.id, u.fio, u.company, u.position, u.role, u.organization_id, u.is_blocked, u.blocked_until, o.is_blocked, o.blocked_until FROM t_p80499285_psot_realization_pro.users u LEFT JOIN t_p80499285_psot_realization_pro.organizations o ON u.organization_id = o.id WHERE u.email = %s AND u.password_hash = %s",
                 (email, password_hash)
             )
             result = cur.fetchone()
@@ -128,6 +128,72 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             conn.close()
             
             if result:
+                from datetime import datetime
+                user_blocked = result[6]
+                user_blocked_until = result[7]
+                org_blocked = result[8]
+                org_blocked_until = result[9]
+                
+                if user_blocked:
+                    if user_blocked_until and datetime.now() < user_blocked_until:
+                        return {
+                            'statusCode': 403,
+                            'headers': {
+                                'Content-Type': 'application/json',
+                                'Access-Control-Allow-Origin': '*'
+                            },
+                            'isBase64Encoded': False,
+                            'body': json.dumps({
+                                'success': False, 
+                                'error': 'blocked',
+                                'message': f'Ваш аккаунт был заблокирован по неизвестной причине, просьба обратиться к администратору вашего предприятия, не забудьте назвать свой id №{result[0]}'
+                            })
+                        }
+                    elif not user_blocked_until:
+                        return {
+                            'statusCode': 403,
+                            'headers': {
+                                'Content-Type': 'application/json',
+                                'Access-Control-Allow-Origin': '*'
+                            },
+                            'isBase64Encoded': False,
+                            'body': json.dumps({
+                                'success': False, 
+                                'error': 'blocked',
+                                'message': f'Ваш аккаунт был заблокирован по неизвестной причине, просьба обратиться к администратору вашего предприятия, не забудьте назвать свой id №{result[0]}'
+                            })
+                        }
+                
+                if org_blocked and result[5]:
+                    if org_blocked_until and datetime.now() < org_blocked_until:
+                        return {
+                            'statusCode': 403,
+                            'headers': {
+                                'Content-Type': 'application/json',
+                                'Access-Control-Allow-Origin': '*'
+                            },
+                            'isBase64Encoded': False,
+                            'body': json.dumps({
+                                'success': False, 
+                                'error': 'blocked',
+                                'message': 'Ваше предприятие временно заблокировано. Обратитесь к главному администратору системы.'
+                            })
+                        }
+                    elif not org_blocked_until:
+                        return {
+                            'statusCode': 403,
+                            'headers': {
+                                'Content-Type': 'application/json',
+                                'Access-Control-Allow-Origin': '*'
+                            },
+                            'isBase64Encoded': False,
+                            'body': json.dumps({
+                                'success': False, 
+                                'error': 'blocked',
+                                'message': 'Ваше предприятие заблокировано. Обратитесь к главному администратору системы.'
+                            })
+                        }
+                
                 return {
                     'statusCode': 200,
                     'headers': {
