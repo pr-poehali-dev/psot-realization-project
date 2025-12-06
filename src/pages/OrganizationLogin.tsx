@@ -81,6 +81,7 @@ const OrganizationLogin = () => {
         localStorage.setItem('userRole', data.role || 'user');
         localStorage.setItem('organizationId', organization!.id.toString());
         localStorage.setItem('organizationName', organization!.name);
+        localStorage.setItem('userCompany', organization!.name);
         
         toast({ title: 'Вход выполнен!' });
         navigate('/dashboard');

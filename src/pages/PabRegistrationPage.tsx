@@ -72,12 +72,24 @@ export default function PabRegistrationPage() {
 
   useEffect(() => {
     const userId = localStorage.getItem('userId');
-    const organizationId = localStorage.getItem('organizationId');
+    const userRole = localStorage.getItem('userRole');
     
-    if (!userId || !organizationId) {
-      console.log('[PAB] Access denied: no user or organization ID');
+    // Разрешаем доступ только авторизованным пользователям
+    if (!userId) {
+      console.log('[PAB] Access denied: no user ID');
       toast.error('Доступ запрещен. Войдите в систему.');
-      navigate('/login');
+      setInitialLoading(false);
+      navigate('/');
+      return;
+    }
+    
+    // Для обычных пользователей проверяем organizationId, для админов - нет
+    const organizationId = localStorage.getItem('organizationId');
+    if (userRole === 'user' && !organizationId) {
+      console.log('[PAB] Access denied: user has no organization');
+      toast.error('Вы не привязаны к организации');
+      setInitialLoading(false);
+      navigate('/dashboard');
       return;
     }
     

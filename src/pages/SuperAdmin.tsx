@@ -10,10 +10,25 @@ const SuperAdmin = () => {
 
   useEffect(() => {
     const role = localStorage.getItem('userRole');
-    if (role !== 'superadmin') {
+    const userId = localStorage.getItem('userId');
+    
+    if (!userId) {
       navigate('/');
       return;
     }
+    
+    if (role !== 'superadmin') {
+      // Перенаправляем на соответствующую страницу
+      if (role === 'admin') {
+        navigate('/admin');
+      } else if (role === 'user') {
+        navigate('/dashboard');
+      } else {
+        navigate('/');
+      }
+      return;
+    }
+    
     setUserFio(localStorage.getItem('userFio') || '');
   }, [navigate]);
 
