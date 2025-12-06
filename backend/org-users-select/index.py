@@ -44,7 +44,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         cur = conn.cursor()
         
         cur.execute("""
-            SELECT id, fio, position, subdivision
+            SELECT id, fio, email, role, organization_id
             FROM t_p80499285_psot_realization_pro.users
             WHERE organization_id = %s
             ORDER BY fio
@@ -55,8 +55,9 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             users.append({
                 'id': row[0],
                 'fio': row[1],
-                'position': row[2] or '',
-                'subdivision': row[3] or ''
+                'email': row[2] or '',
+                'role': row[3] or 'user',
+                'organization_id': row[4]
             })
         
         cur.close()
@@ -69,7 +70,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'Access-Control-Allow-Origin': '*'
             },
             'isBase64Encoded': False,
-            'body': json.dumps(users)
+            'body': json.dumps({'users': users})
         }
     
     return {
