@@ -82,10 +82,12 @@ const AssignMiniAdmin = () => {
   const loadUsers = async (orgId: number) => {
     try {
       setLoading(true);
-      const response = await fetch(`https://functions.poehali.dev/7fcd01f1-c25a-445e-87a6-c04277b08e96?organization_id=${orgId}`);
+      const response = await fetch(`https://functions.poehali.dev/7f32d60e-dee5-4b28-901a-10984045d99e?organization_id=${orgId}`);
       if (response.ok) {
         const data = await response.json();
         setUsers(data.users || []);
+      } else {
+        toast.error('Ошибка загрузки пользователей');
       }
     } catch (error) {
       console.error('Failed to load users:', error);
