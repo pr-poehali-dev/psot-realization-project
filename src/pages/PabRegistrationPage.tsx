@@ -71,9 +71,19 @@ export default function PabRegistrationPage() {
   ]);
 
   useEffect(() => {
+    const userId = localStorage.getItem('userId');
+    const organizationId = localStorage.getItem('organizationId');
+    
+    if (!userId || !organizationId) {
+      console.log('[PAB] Access denied: no user or organization ID');
+      toast.error('Доступ запрещен. Войдите в систему.');
+      navigate('/login');
+      return;
+    }
+    
     setUserCompany(localStorage.getItem('userCompany') || '');
     loadData();
-  }, []);
+  }, [navigate]);
 
   const loadData = async () => {
     try {
