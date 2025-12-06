@@ -41,11 +41,12 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         org_code = params.get('code')
         
         if org_code:
-            cur.execute('''
+            safe_code = org_code.replace("'", "''")
+            cur.execute(f'''
                 SELECT o.id, o.name, o.registration_code, o.logo_url
-                FROM organizations o
-                WHERE o.registration_code = %s AND o.is_active = true
-            ''', (org_code,))
+                FROM t_p80499285_psot_realization_pro.organizations o
+                WHERE o.registration_code = '{safe_code}' AND o.is_active = true
+            ''')
             row = cur.fetchone()
             
             if row:
@@ -74,19 +75,20 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 }
         
         if org_id:
-            cur.execute('''
+            safe_org_id = int(org_id)
+            cur.execute(f'''
                 SELECT o.id, o.name, o.registration_code, o.created_at, o.trial_end_date, 
                        o.subscription_type, o.is_active, o.logo_url,
                        COUNT(DISTINCT u.id) as user_count,
                        COUNT(DISTINCT om.module_id) as module_count,
                        COUNT(DISTINCT op.page_id) as page_count
-                FROM organizations o
-                LEFT JOIN users u ON o.id = u.organization_id
-                LEFT JOIN organization_modules om ON o.id = om.organization_id
-                LEFT JOIN organization_pages op ON o.id = op.organization_id
-                WHERE o.id = %s
+                FROM t_p80499285_psot_realization_pro.organizations o
+                LEFT JOIN t_p80499285_psot_realization_pro.users u ON o.id = u.organization_id
+                LEFT JOIN t_p80499285_psot_realization_pro.organization_modules om ON o.id = om.organization_id
+                LEFT JOIN t_p80499285_psot_realization_pro.organization_pages op ON o.id = op.organization_id
+                WHERE o.id = {safe_org_id}
                 GROUP BY o.id
-            ''', (org_id,))
+            ''')
         else:
             cur.execute('''
                 SELECT o.id, o.name, o.registration_code, o.created_at, o.trial_end_date, 
@@ -94,10 +96,10 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                        COUNT(DISTINCT u.id) as user_count,
                        COUNT(DISTINCT om.module_id) as module_count,
                        COUNT(DISTINCT op.page_id) as page_count
-                FROM organizations o
-                LEFT JOIN users u ON o.id = u.organization_id
-                LEFT JOIN organization_modules om ON o.id = om.organization_id
-                LEFT JOIN organization_pages op ON o.id = op.organization_id
+                FROM t_p80499285_psot_realization_pro.organizations o
+                LEFT JOIN t_p80499285_psot_realization_pro.users u ON o.id = u.organization_id
+                LEFT JOIN t_p80499285_psot_realization_pro.organization_modules om ON o.id = om.organization_id
+                LEFT JOIN t_p80499285_psot_realization_pro.organization_pages op ON o.id = op.organization_id
                 GROUP BY o.id
                 ORDER BY o.created_at DESC
             ''')
@@ -153,28 +155,41 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         subscription_type = 'free'
         
         if subscription_plan_id:
-            cur.execute('SELECT trial_days, name FROM t_p80499285_psot_realization_pro.subscription_plans WHERE id = %s', (subscription_plan_id,))
+            safe_subscription_plan_id = int(subscription_plan_id)
+            cur.execute(f'SELECT trial_days, name FROM t_p80499285_psot_realization_pro.subscription_plans WHERE id = {safe_subscription_plan_id}')
             plan = cur.fetchone()
             if plan:
                 trial_days, plan_name = plan
                 trial_end_date = datetime.now() + timedelta(days=trial_days)
                 subscription_type = plan_name
         
-        cur.execute('''
+        safe_name = name.replace("'", "''")
+        safe_registration_code = registration_code.replace("'", "''")
+        safe_trial_end_date = f"'{trial_end_date.isoformat()}'" if trial_end_date else 'NULL'
+        safe_subscription_type = subscription_type.replace("'", "''")
+        if logo_url:
+            escaped_logo = logo_url.replace("'", "''")
+            safe_logo_url = f"'{escaped_logo}'"
+        else:
+            safe_logo_url = 'NULL'
+        safe_tariff_plan_id = str(int(tariff_plan_id)) if tariff_plan_id else 'NULL'
+        cur.execute(f'''
             INSERT INTO t_p80499285_psot_realization_pro.organizations (name, registration_code, trial_end_date, subscription_type, logo_url, tariff_plan_id)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            VALUES ('{safe_name}', '{safe_registration_code}', {safe_trial_end_date}, '{safe_subscription_type}', {safe_logo_url}, {safe_tariff_plan_id})
             RETURNING id
-        ''', (name, registration_code, trial_end_date, subscription_type, logo_url, tariff_plan_id))
+        ''')
         
         org_id = cur.fetchone()[0]
         
         if tariff_plan_id:
-            cur.execute('''
+            safe_org_id = int(org_id)
+            safe_tariff_plan_id = int(tariff_plan_id)
+            cur.execute(f'''
                 INSERT INTO t_p80499285_psot_realization_pro.organization_modules (organization_id, module_id, is_enabled)
-                SELECT %s, tm.module_id, true
+                SELECT {safe_org_id}, tm.module_id, true
                 FROM t_p80499285_psot_realization_pro.tariff_modules tm
-                WHERE tm.tariff_id = %s
-            ''', (org_id, tariff_plan_id))
+                WHERE tm.tariff_id = {safe_tariff_plan_id}
+            ''')
         
         conn.commit()
         cur.close()
