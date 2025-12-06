@@ -7,6 +7,7 @@ import Icon from '@/components/ui/icon';
 const Dashboard = () => {
   const navigate = useNavigate();
   const [userFio, setUserFio] = useState('');
+  const [userCompany, setUserCompany] = useState('');
 
   useEffect(() => {
     const userId = localStorage.getItem('userId');
@@ -15,6 +16,7 @@ const Dashboard = () => {
       return;
     }
     setUserFio(localStorage.getItem('userFio') || '');
+    setUserCompany(localStorage.getItem('userCompany') || '');
   }, [navigate]);
 
   const handleLogout = () => {
@@ -47,6 +49,9 @@ const Dashboard = () => {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-white">АСУБТ</h1>
+              {userCompany && (
+                <p className="text-blue-400 font-semibold text-lg">{userCompany}</p>
+              )}
               <p className="text-yellow-500">Добро пожаловать, {userFio}</p>
             </div>
           </div>
