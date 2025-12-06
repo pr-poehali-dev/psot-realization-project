@@ -64,6 +64,8 @@ const SystemSettings = () => {
       return;
     }
 
+    toast({ title: 'Загрузка файла...', description: 'Обрабатываем данные' });
+
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
@@ -98,7 +100,7 @@ const SystemSettings = () => {
         }
 
         setImportedUsers(users);
-        toast({ title: 'Файл загружен', description: `Найдено ${users.length} пользователей` });
+        toast({ title: '✅ Файл успешно загружен', description: `Найдено ${users.length} пользователей для импорта` });
       } catch (error) {
         toast({ title: 'Ошибка чтения файла', description: 'Проверьте формат Excel файла', variant: 'destructive' });
       }
