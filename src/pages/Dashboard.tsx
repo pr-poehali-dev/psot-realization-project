@@ -23,7 +23,8 @@ const Dashboard = () => {
   };
 
   const navigationButtons = [
-    { label: 'Профиль', icon: 'User', color: 'from-purple-500 to-purple-600', route: '/profile' },
+    { label: 'Личный кабинет', icon: 'User', color: 'from-purple-500 to-purple-600', route: '/user-cabinet' },
+    { label: 'Профиль', icon: 'Settings', color: 'from-slate-500 to-slate-600', route: '/profile' },
     { label: 'Регистрация ПАБ', icon: 'FileText', color: 'from-red-500 to-red-600', route: '/pab-registration' },
     { label: 'Мои показатели', icon: 'TrendingUp', color: 'from-blue-500 to-blue-600', route: '/my-metrics' },
     { label: 'Производственный контроль', icon: 'Shield', color: 'from-red-600 to-red-700', route: '/production-control' },

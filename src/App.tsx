@@ -31,6 +31,7 @@ import TariffManagementPage from "./pages/TariffManagementPage";
 import OrganizationModulesPage from "./pages/OrganizationModulesPage";
 import MyMetricsPage from "./pages/MyMetricsPage";
 import SystemSettings from "./pages/SystemSettings";
+import UserCabinet from "./pages/UserCabinet";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -69,6 +70,7 @@ const App = () => (
           <Route path="/organization-modules/:id" element={<OrganizationModulesPage />} />
           <Route path="/my-metrics" element={<MyMetricsPage />} />
           <Route path="/system-settings" element={<SystemSettings />} />
+          <Route path="/user-cabinet" element={<UserCabinet />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

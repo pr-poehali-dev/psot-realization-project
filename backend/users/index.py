@@ -131,6 +131,97 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'isBase64Encoded': False,
                 'body': json.dumps({'success': True, 'companies': companies})
             }
+        
+        elif action == 'user_cabinet':
+            user_id = params.get('userId')
+            
+            if not user_id:
+                return {
+                    'statusCode': 400,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'isBase64Encoded': False,
+                    'body': json.dumps({'success': False, 'error': 'User ID required'})
+                }
+            
+            cur.execute(f"""
+                SELECT u.id, u.display_name, u.fio, u.email, u.company, u.subdivision, u.position,
+                       COALESCE(s.registered_count, 0) as registered_count,
+                       COALESCE(s.online_count, 0) as online_count,
+                       COALESCE(s.offline_count, 0) as offline_count,
+                       COALESCE(s.pab_total, 0) as pab_total,
+                       COALESCE(s.pab_completed, 0) as pab_completed,
+                       COALESCE(s.pab_in_progress, 0) as pab_in_progress,
+                       COALESCE(s.pab_overdue, 0) as pab_overdue,
+                       COALESCE(s.observations_issued, 0) as observations_issued,
+                       COALESCE(s.observations_completed, 0) as observations_completed,
+                       COALESCE(s.observations_in_progress, 0) as observations_in_progress,
+                       COALESCE(s.observations_overdue, 0) as observations_overdue,
+                       COALESCE(s.prescriptions_issued, 0) as prescriptions_issued,
+                       COALESCE(s.prescriptions_completed, 0) as prescriptions_completed,
+                       COALESCE(s.prescriptions_in_progress, 0) as prescriptions_in_progress,
+                       COALESCE(s.prescriptions_overdue, 0) as prescriptions_overdue,
+                       COALESCE(s.audits_conducted, 0) as audits_conducted
+                FROM t_p80499285_psot_realization_pro.users u
+                LEFT JOIN t_p80499285_psot_realization_pro.user_stats s ON u.id = s.user_id
+                WHERE u.id = {user_id}
+            """)
+            
+            row = cur.fetchone()
+            
+            if not row:
+                cur.close()
+                conn.close()
+                return {
+                    'statusCode': 404,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'isBase64Encoded': False,
+                    'body': json.dumps({'success': False, 'error': 'User not found'})
+                }
+            
+            stats = {
+                'user_id': row[0],
+                'display_name': row[1] or f"ID№{str(row[0]).zfill(5)}",
+                'fio': row[2],
+                'email': row[3],
+                'company': row[4] or '',
+                'subdivision': row[5] or '',
+                'position': row[6] or '',
+                'registered_count': row[7],
+                'online_count': row[8],
+                'offline_count': row[9],
+                'pab_total': row[10],
+                'pab_completed': row[11],
+                'pab_in_progress': row[12],
+                'pab_overdue': row[13],
+                'observations_issued': row[14],
+                'observations_completed': row[15],
+                'observations_in_progress': row[16],
+                'observations_overdue': row[17],
+                'prescriptions_issued': row[18],
+                'prescriptions_completed': row[19],
+                'prescriptions_in_progress': row[20],
+                'prescriptions_overdue': row[21],
+                'audits_conducted': row[22]
+            }
+            
+            cur.close()
+            conn.close()
+            
+            return {
+                'statusCode': 200,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'isBase64Encoded': False,
+                'body': json.dumps({'success': True, 'stats': stats})
+            }
     
     if method == 'PUT':
         import psycopg2
