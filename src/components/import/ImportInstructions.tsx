@@ -12,10 +12,12 @@ export const ImportInstructions = () => {
         <p><strong>Формат Excel файла:</strong></p>
         <ul className="list-disc list-inside space-y-1 ml-4">
           <li>Первая строка — заголовки столбцов</li>
+          <li>Столбец <strong>"ID№"</strong></li>
           <li>Столбец <strong>"ФИО"</strong> — полное имя пользователя (обязательно)</li>
-          <li>Столбец <strong>"Email"</strong> — уникальная почта (обязательно)</li>
+          <li>Столбец <strong>"Компания"</strong></li>
           <li>Столбец <strong>"Подразделение"</strong> — название отдела</li>
           <li>Столбец <strong>"Должность"</strong> — название должности</li>
+          <li>Столбец <strong>"E-mail"</strong> — уникальная почта (обязательно)</li>
         </ul>
         <p className="mt-3"><strong>Что происходит при импорте:</strong></p>
         <ul className="list-disc list-inside space-y-1 ml-4">
