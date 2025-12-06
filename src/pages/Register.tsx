@@ -67,8 +67,41 @@ const Register = () => {
       const data = await response.json();
 
       if (response.ok) {
-        toast.success('Регистрация успешна! Войдите в систему');
-        navigate('/');
+        toast.success('Регистрация успешна! Выполняем вход...');
+        
+        // Автоматический вход после регистрации
+        const loginResponse = await fetch('https://functions.poehali.dev/eb523ac0-0903-4780-8f5d-7e0546c1eda5', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'login',
+            email,
+            password,
+          }),
+        });
+
+        const loginData = await loginResponse.json();
+
+        if (loginResponse.ok && loginData.success) {
+          // Сохраняем данные пользователя
+          localStorage.setItem('userId', loginData.userId);
+          localStorage.setItem('userFio', loginData.fio);
+          localStorage.setItem('userCompany', loginData.company);
+          localStorage.setItem('userPosition', loginData.position);
+          localStorage.setItem('userRole', loginData.role);
+          if (loginData.organizationId) {
+            localStorage.setItem('organizationId', loginData.organizationId);
+          }
+          
+          // Перенаправляем на дашборд
+          navigate('/dashboard');
+        } else {
+          // Если автоматический вход не удался, перенаправляем на страницу входа
+          toast.success('Регистрация успешна! Войдите в систему');
+          navigate('/');
+        }
       } else {
         toast.error(data.error || 'Ошибка регистрации');
       }
