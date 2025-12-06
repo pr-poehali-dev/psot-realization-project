@@ -24,6 +24,60 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'body': ''
         }
     
+    if method == 'GET':
+        query_params = event.get('queryStringParameters', {})
+        action = query_params.get('action')
+        
+        if action == 'verify_code':
+            import psycopg2
+            
+            code = query_params.get('code')
+            if not code:
+                return {
+                    'statusCode': 400,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'isBase64Encoded': False,
+                    'body': json.dumps({'success': False, 'error': 'Code required'})
+                }
+            
+            conn = psycopg2.connect(os.environ['DATABASE_URL'])
+            cur = conn.cursor()
+            
+            code_escaped = code.replace("'", "''")
+            cur.execute(f"SELECT id, name FROM t_p80499285_psot_realization_pro.organizations WHERE registration_code = '{code_escaped}'")
+            org_result = cur.fetchone()
+            
+            cur.close()
+            conn.close()
+            
+            if org_result:
+                return {
+                    'statusCode': 200,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'isBase64Encoded': False,
+                    'body': json.dumps({
+                        'success': True,
+                        'organizationId': org_result[0],
+                        'organizationName': org_result[1]
+                    })
+                }
+            else:
+                return {
+                    'statusCode': 404,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'isBase64Encoded': False,
+                    'body': json.dumps({'success': False, 'error': 'Invalid code'})
+                }
+    
     if method == 'POST':
         body_data = json.loads(event.get('body', '{}'))
         action = body_data.get('action')

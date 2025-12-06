@@ -16,13 +16,51 @@ const Register = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [organizationName, setOrganizationName] = useState<string | null>(null);
+  const [verifyingCode, setVerifyingCode] = useState(false);
 
   useEffect(() => {
     const urlCode = searchParams.get('code');
     if (urlCode) {
       setCode(urlCode);
+      verifyCode(urlCode);
     }
   }, [searchParams]);
+
+  const verifyCode = async (codeValue: string) => {
+    if (!codeValue || codeValue.length < 6) return;
+    
+    setVerifyingCode(true);
+    try {
+      const response = await fetch(
+        `https://functions.poehali.dev/eb523ac0-0903-4780-8f5d-7e0546c1eda5?action=verify_code&code=${encodeURIComponent(codeValue)}`
+      );
+      const data = await response.json();
+      
+      if (data.success) {
+        setOrganizationName(data.organizationName);
+        toast.success(`Код подтверждён: ${data.organizationName}`);
+      } else {
+        setOrganizationName(null);
+      }
+    } catch (error) {
+      console.error('Code verification error:', error);
+      setOrganizationName(null);
+    } finally {
+      setVerifyingCode(false);
+    }
+  };
+
+  const handleCodeChange = (value: string) => {
+    const upperValue = value.toUpperCase();
+    setCode(upperValue);
+    
+    if (upperValue.length >= 6) {
+      verifyCode(upperValue);
+    } else {
+      setOrganizationName(null);
+    }
+  };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,7 +157,11 @@ const Register = () => {
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">Регистрация</CardTitle>
           <CardDescription className="text-center">
-            Создайте аккаунт по коду приглашения
+            {organizationName ? (
+              <span className="text-blue-600 font-medium">Регистрация в организацию: {organizationName}</span>
+            ) : (
+              'Создайте аккаунт по коду приглашения'
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -131,10 +173,19 @@ const Register = () => {
                 type="text"
                 placeholder="XXXXXXXX"
                 value={code}
-                onChange={(e) => setCode(e.target.value.toUpperCase())}
+                onChange={(e) => handleCodeChange(e.target.value)}
                 disabled={loading}
                 required
               />
+              {verifyingCode && (
+                <p className="text-sm text-gray-500 mt-1">Проверка кода...</p>
+              )}
+              {organizationName && (
+                <p className="text-sm text-green-600 font-medium mt-1">✓ {organizationName}</p>
+              )}
+              {code.length >= 6 && !verifyingCode && !organizationName && (
+                <p className="text-sm text-red-600 mt-1">Неверный код приглашения</p>
+              )}
             </div>
 
             <div className="space-y-2">
