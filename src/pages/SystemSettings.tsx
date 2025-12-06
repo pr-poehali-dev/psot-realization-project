@@ -78,13 +78,24 @@ const SystemSettings = () => {
           Должность: string;
         }>(worksheet);
 
-        const users: ImportedUser[] = jsonData.map((row) => ({
-          fio: row['ФИО'] || '',
-          email: row['Email'] || '',
-          subdivision: row['Подразделение'] || '',
-          position: row['Должность'] || '',
-          status: 'pending',
-        }));
+        const users: ImportedUser[] = jsonData
+          .filter((row) => row['Email'] && row['Email'].trim() !== '')
+          .map((row) => ({
+            fio: row['ФИО'] || '',
+            email: row['Email'].trim(),
+            subdivision: row['Подразделение'] || '',
+            position: row['Должность'] || '',
+            status: 'pending',
+          }));
+
+        if (users.length === 0) {
+          toast({ 
+            title: 'Нет данных для импорта', 
+            description: 'Убедитесь, что в файле есть колонка "Email" с заполненными значениями',
+            variant: 'destructive' 
+          });
+          return;
+        }
 
         setImportedUsers(users);
         toast({ title: 'Файл загружен', description: `Найдено ${users.length} пользователей` });
@@ -105,20 +116,25 @@ const SystemSettings = () => {
       const user = updatedUsers[i];
       
       try {
+        const requestBody = {
+          action: 'bulk_import',
+          companyId: selectedCompany,
+          fio: user.fio,
+          email: user.email,
+          subdivision: user.subdivision,
+          position: user.position,
+        };
+        
+        console.log(`Импорт пользователя ${i + 1}/${updatedUsers.length}:`, requestBody);
+        
         const response = await fetch('https://functions.poehali.dev/9d7b143e-21c6-4e84-95b5-302b35a8eedf', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'bulk_import',
-            companyId: selectedCompany,
-            fio: user.fio,
-            email: user.email,
-            subdivision: user.subdivision,
-            position: user.position,
-          }),
+          body: JSON.stringify(requestBody),
         });
 
         const data = await response.json();
+        console.log(`Ответ для пользователя ${i + 1}:`, data);
         
         if (data.success) {
           updatedUsers[i] = {
@@ -134,10 +150,11 @@ const SystemSettings = () => {
           };
         }
       } catch (error) {
+        console.error(`Ошибка импорта пользователя ${i + 1}:`, error);
         updatedUsers[i] = {
           ...user,
           status: 'error',
-          error: 'Ошибка сервера',
+          error: error instanceof Error ? error.message : 'Ошибка сервера',
         };
       }
 

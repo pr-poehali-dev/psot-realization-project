@@ -319,9 +319,20 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         if action == 'bulk_import':
             company_id = body_data.get('companyId')
             fio = body_data.get('fio')
-            email = body_data.get('email')
+            email = body_data.get('email', '').strip()
             subdivision = body_data.get('subdivision')
             position = body_data.get('position')
+            
+            if not email:
+                return {
+                    'statusCode': 400,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'isBase64Encoded': False,
+                    'body': json.dumps({'success': False, 'error': 'Email обязателен для заполнения'})
+                }
             
             conn = psycopg2.connect(os.environ['DATABASE_URL'])
             cur = conn.cursor()
