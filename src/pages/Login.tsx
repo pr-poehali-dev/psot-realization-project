@@ -98,6 +98,8 @@ const Login = () => {
           navigate('/superadmin');
         } else if (role === 'admin') {
           navigate('/admin');
+        } else if (role === 'miniadmin') {
+          navigate('/miniadmin');
         } else {
           navigate('/dashboard');
         }

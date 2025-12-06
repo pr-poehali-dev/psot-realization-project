@@ -97,7 +97,13 @@ const OrganizationLogin = () => {
         localStorage.setItem('userCompany', organization!.name);
         
         toast({ title: 'Вход выполнен!' });
-        navigate('/dashboard');
+        
+        const role = data.role || 'user';
+        if (role === 'miniadmin') {
+          navigate('/miniadmin');
+        } else {
+          navigate('/dashboard');
+        }
       } else {
         toast({ title: 'Ошибка', description: data.error || 'Неверные учётные данные', variant: 'destructive' });
       }

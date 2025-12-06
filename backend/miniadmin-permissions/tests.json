@@ -1,0 +1,38 @@
+{
+  "tests": [
+    {
+      "name": "Get user permissions",
+      "method": "GET",
+      "path": "/?user_id=1",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "permissions": "array"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Assign miniadmin permissions",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "user_id": 1,
+        "organization_id": 1,
+        "permissions": [
+          {
+            "module": "users_management",
+            "canView": true,
+            "canEdit": false,
+            "canDelete": false
+          }
+        ],
+        "assigned_by": 1
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "success": true,
+        "message": "string"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
