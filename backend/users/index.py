@@ -109,6 +109,28 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'isBase64Encoded': False,
                 'body': json.dumps({'success': True, 'stats': stats})
             }
+        
+        elif action == 'list_companies':
+            cur.execute("""
+                SELECT id, name 
+                FROM t_p80499285_psot_realization_pro.organizations 
+                ORDER BY name
+            """)
+            
+            companies = [{'id': row[0], 'name': row[1]} for row in cur.fetchall()]
+            
+            cur.close()
+            conn.close()
+            
+            return {
+                'statusCode': 200,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'isBase64Encoded': False,
+                'body': json.dumps({'success': True, 'companies': companies})
+            }
     
     if method == 'PUT':
         import psycopg2
@@ -197,11 +219,95 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     if method == 'POST':
         import psycopg2
         import hashlib
+        import secrets
+        import string
         
         body_data = json.loads(event.get('body', '{}'))
         action = body_data.get('action')
         
-        if action == 'create_user':
+        if action == 'bulk_import':
+            company_id = body_data.get('companyId')
+            fio = body_data.get('fio')
+            email = body_data.get('email')
+            subdivision = body_data.get('subdivision')
+            position = body_data.get('position')
+            
+            conn = psycopg2.connect(os.environ['DATABASE_URL'])
+            cur = conn.cursor()
+            
+            email_escaped = email.replace("'", "''")
+            cur.execute(f"SELECT id FROM t_p80499285_psot_realization_pro.users WHERE email = '{email_escaped}'")
+            if cur.fetchone():
+                cur.close()
+                conn.close()
+                return {
+                    'statusCode': 400,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'isBase64Encoded': False,
+                    'body': json.dumps({'success': False, 'error': 'Email уже существует'})
+                }
+            
+            temp_password = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(12))
+            password_hash = hashlib.sha256(temp_password.encode()).hexdigest()
+            
+            fio_escaped = fio.replace("'", "''") if fio else ''
+            subdivision_escaped = subdivision.replace("'", "''") if subdivision else ''
+            position_escaped = position.replace("'", "''") if position else ''
+            
+            cur.execute(f"SELECT name FROM t_p80499285_psot_realization_pro.organizations WHERE id = {company_id}")
+            company_row = cur.fetchone()
+            company_name = company_row[0] if company_row else ''
+            company_name_escaped = company_name.replace("'", "''")
+            
+            cur.execute(f"""
+                INSERT INTO t_p80499285_psot_realization_pro.users 
+                (email, password_hash, fio, company, subdivision, position, role, organization_id) 
+                VALUES ('{email_escaped}', '{password_hash}', '{fio_escaped}', '{company_name_escaped}', '{subdivision_escaped}', '{position_escaped}', 'user', {company_id}) 
+                RETURNING id
+            """)
+            
+            user_id = cur.fetchone()[0]
+            
+            cur.execute(f"INSERT INTO t_p80499285_psot_realization_pro.user_stats (user_id, registered_count) VALUES ({user_id}, 1)")
+            
+            cur.execute(f"SELECT registration_code FROM t_p80499285_psot_realization_pro.organizations WHERE id = {company_id}")
+            org_code_row = cur.fetchone()
+            org_code = org_code_row[0] if org_code_row else ''
+            
+            base_url = event.get('headers', {}).get('Origin', 'https://your-domain.com')
+            login_link = f"{base_url}/org/{org_code}?email={email}&password={temp_password}"
+            
+            conn.commit()
+            cur.close()
+            conn.close()
+            
+            return {
+                'statusCode': 200,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'isBase64Encoded': False,
+                'body': json.dumps({'success': True, 'loginLink': login_link})
+            }
+        
+        elif action == 'send_bulk_links':
+            users_data = body_data.get('users', [])
+            
+            return {
+                'statusCode': 200,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'isBase64Encoded': False,
+                'body': json.dumps({'success': True, 'sent': len(users_data)})
+            }
+        
+        elif action == 'create_user':
             email = body_data.get('email')
             password = body_data.get('password')
             fio = body_data.get('fio')
