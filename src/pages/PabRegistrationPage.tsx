@@ -37,6 +37,7 @@ interface OrgUser {
 export default function PabRegistrationPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [userCompany, setUserCompany] = useState('');
   const [dictionaries, setDictionaries] = useState<Dictionaries>({
     categories: [],
@@ -76,22 +77,29 @@ export default function PabRegistrationPage() {
 
   const loadData = async () => {
     try {
+      console.log('[PAB] Starting data load...');
+      
       // Загрузка справочников
       const dictResponse = await fetch('https://functions.poehali.dev/8a3ae143-7ece-49b7-9863-4341c4bef960');
       const dictData = await dictResponse.json();
+      console.log('[PAB] Dictionaries loaded:', dictData);
       setDictionaries(dictData);
 
       // Генерация номера ПАБ
       const numberResponse = await fetch('https://functions.poehali.dev/c04242d9-b386-407e-bb84-10d219a16e97');
       const numberData = await numberResponse.json();
+      console.log('[PAB] Document number generated:', numberData.doc_number);
       setDocNumber(numberData.doc_number);
 
       // Загрузка данных пользователя
       const userId = localStorage.getItem('userId');
       const organizationId = localStorage.getItem('organizationId');
+      console.log('[PAB] User ID:', userId, 'Org ID:', organizationId);
+      
       if (userId) {
         const userResponse = await fetch(`https://functions.poehali.dev/1428a44a-2d14-4e76-86e5-7e660fdfba3f?userId=${userId}`);
         const userData = await userResponse.json();
+        console.log('[PAB] User data loaded:', userData);
         if (userData.success && userData.user) {
           setInspectorFio(userData.user.fio || '');
           setInspectorPosition(userData.user.position || '');
@@ -103,11 +111,16 @@ export default function PabRegistrationPage() {
       if (organizationId) {
         const usersResponse = await fetch(`https://functions.poehali.dev/7f32d60e-dee5-4b28-901a-10984045d99e?organization_id=${organizationId}`);
         const usersData = await usersResponse.json();
+        console.log('[PAB] Organization users loaded:', usersData.length);
         setOrgUsers(usersData);
       }
+      
+      console.log('[PAB] Data load complete!');
     } catch (error) {
+      console.error('[PAB] Error loading data:', error);
       toast.error('Ошибка загрузки данных');
-      console.error(error);
+    } finally {
+      setInitialLoading(false);
     }
   };
 
@@ -281,20 +294,46 @@ export default function PabRegistrationPage() {
     setPhotoFiles(updated);
   };
 
+  if (initialLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <Icon name="Loader2" size={48} className="text-yellow-500 animate-spin mx-auto mb-4" />
+          <p className="text-white text-xl">Загрузка формы регистрации ПАБ...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
       <div className="max-w-4xl mx-auto">
-        <div className="flex items-center gap-4 mb-8">
-          <div className="bg-gradient-to-br from-yellow-600 to-yellow-700 p-3 rounded-xl shadow-lg">
-            <Icon name="FileText" size={32} className="text-white" />
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <div className="bg-gradient-to-br from-yellow-600 to-yellow-700 p-3 rounded-xl shadow-lg">
+              <Icon name="FileText" size={32} className="text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-white">Регистрация ПАБ</h1>
+              {userCompany && (
+                <p className="text-blue-400 font-semibold text-lg">{userCompany}</p>
+              )}
+            </div>
           </div>
-          <div>
-            <h1 className="text-3xl font-bold text-white">Регистрация ПАБ</h1>
-            {userCompany && (
-              <p className="text-blue-400 font-semibold text-lg">{userCompany}</p>
-            )}
-          </div>
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg flex items-center gap-2 transition-colors"
+          >
+            <Icon name="ArrowLeft" size={20} />
+            Назад
+          </button>
         </div>
+
+        {!docNumber && (
+          <div className="bg-yellow-600/20 border border-yellow-600/50 rounded-lg p-4 mb-6">
+            <p className="text-yellow-300 text-center">⚠️ Если форма не отображается, проверьте консоль браузера (F12) или обратитесь к администратору</p>
+          </div>
+        )}
 
         <div className="space-y-6">
           <PabFormHeader
