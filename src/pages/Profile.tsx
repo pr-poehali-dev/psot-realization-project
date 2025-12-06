@@ -193,6 +193,9 @@ const Profile = () => {
                 <h1 className="text-3xl font-bold text-white">
                   {profile.role === 'superadmin' ? profile.fio : (profile.display_name || profile.fio)}
                 </h1>
+                {profile.company && (
+                  <p className="text-blue-400 font-semibold text-lg">{profile.company}</p>
+                )}
                 <p className="text-yellow-500">{profile.email}</p>
               </div>
             </div>

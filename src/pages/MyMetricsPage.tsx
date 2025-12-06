@@ -30,6 +30,7 @@ const MyMetricsPage = () => {
   const [activeTab, setActiveTab] = useState<'pab' | 'pk'>('pab');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [userCompany, setUserCompany] = useState('');
   const [metrics, setMetrics] = useState({
     totalAudits: 0,
     totalObservations: 0,
@@ -54,6 +55,8 @@ const MyMetricsPage = () => {
       navigate('/');
       return;
     }
+
+    setUserCompany(localStorage.getItem('userCompany') || '');
 
     const today = new Date();
     const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -431,7 +434,12 @@ const MyMetricsPage = () => {
             <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-3 rounded-xl shadow-lg">
               <Icon name="TrendingUp" size={32} className="text-white" />
             </div>
-            <h1 className="text-3xl font-bold text-white">Мои показатели</h1>
+            <div>
+              <h1 className="text-3xl font-bold text-white">Мои показатели</h1>
+              {userCompany && (
+                <p className="text-blue-400 font-semibold text-lg">{userCompany}</p>
+              )}
+            </div>
           </div>
         </div>
 

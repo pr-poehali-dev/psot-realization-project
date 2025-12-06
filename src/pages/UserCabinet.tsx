@@ -98,6 +98,9 @@ const UserCabinet = () => {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-white">Личный кабинет</h1>
+              {stats.company && (
+                <p className="text-blue-400 font-semibold text-lg">{stats.company}</p>
+              )}
               <p className="text-slate-400">{stats.fio}</p>
             </div>
           </div>

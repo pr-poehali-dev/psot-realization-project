@@ -37,6 +37,7 @@ interface OrgUser {
 export default function PabRegistrationPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [userCompany, setUserCompany] = useState('');
   const [dictionaries, setDictionaries] = useState<Dictionaries>({
     categories: [],
     conditions: [],
@@ -69,6 +70,7 @@ export default function PabRegistrationPage() {
   ]);
 
   useEffect(() => {
+    setUserCompany(localStorage.getItem('userCompany') || '');
     loadData();
   }, []);
 
@@ -286,7 +288,12 @@ export default function PabRegistrationPage() {
           <div className="bg-gradient-to-br from-yellow-600 to-yellow-700 p-3 rounded-xl shadow-lg">
             <Icon name="FileText" size={32} className="text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-white">Регистрация ПАБ</h1>
+          <div>
+            <h1 className="text-3xl font-bold text-white">Регистрация ПАБ</h1>
+            {userCompany && (
+              <p className="text-blue-400 font-semibold text-lg">{userCompany}</p>
+            )}
+          </div>
         </div>
 
         <div className="space-y-6">
