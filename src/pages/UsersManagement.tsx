@@ -40,10 +40,22 @@ const UsersManagement = () => {
 
   useEffect(() => {
     const role = localStorage.getItem('userRole');
-    if (role !== 'admin' && role !== 'superadmin') {
+    const userId = localStorage.getItem('userId');
+    
+    if (!userId) {
       navigate('/');
       return;
     }
+    
+    if (role !== 'admin' && role !== 'superadmin') {
+      if (role === 'user') {
+        navigate('/dashboard');
+      } else {
+        navigate('/');
+      }
+      return;
+    }
+    
     setUserRole(role || '');
     setIsSuperAdmin(role === 'superadmin');
     loadUsers();

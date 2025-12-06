@@ -39,10 +39,24 @@ const CreateOrganizationPage = () => {
 
   useEffect(() => {
     const role = localStorage.getItem('userRole');
-    if (role !== 'superadmin') {
+    const userId = localStorage.getItem('userId');
+    
+    if (!userId) {
       navigate('/');
       return;
     }
+    
+    if (role !== 'superadmin') {
+      if (role === 'admin') {
+        navigate('/admin');
+      } else if (role === 'user') {
+        navigate('/dashboard');
+      } else {
+        navigate('/');
+      }
+      return;
+    }
+    
     loadTariffs();
     loadLogoTemplates();
   }, [navigate]);
