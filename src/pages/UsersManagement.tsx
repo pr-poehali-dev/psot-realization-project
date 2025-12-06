@@ -292,7 +292,13 @@ const UsersManagement = () => {
             <h1 className="text-3xl font-bold text-white">Управление пользователями</h1>
           </div>
           <Button
-            onClick={() => navigate('/dashboard')}
+            onClick={() => {
+              if (isSuperAdmin) {
+                navigate('/superadmin');
+              } else {
+                navigate('/admin');
+              }
+            }}
             variant="outline"
             className="border-yellow-600/50 text-yellow-500 hover:bg-yellow-600/10"
           >

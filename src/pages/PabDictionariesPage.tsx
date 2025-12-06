@@ -36,8 +36,25 @@ export default function PabDictionariesPage() {
   const [editingItem, setEditingItem] = useState<DictionaryItem | null>(null);
 
   useEffect(() => {
+    const role = localStorage.getItem('userRole');
+    const userId = localStorage.getItem('userId');
+    
+    if (!userId) {
+      navigate('/');
+      return;
+    }
+    
+    if (role !== 'superadmin' && role !== 'admin') {
+      if (role === 'user') {
+        navigate('/dashboard');
+      } else {
+        navigate('/');
+      }
+      return;
+    }
+    
     loadDictionaries();
-  }, []);
+  }, [navigate]);
 
   const loadDictionaries = async () => {
     try {
@@ -147,7 +164,16 @@ export default function PabDictionariesPage() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <Button variant="ghost" onClick={() => navigate('/')}>
+          <Button variant="ghost" onClick={() => {
+            const role = localStorage.getItem('userRole');
+            if (role === 'superadmin') {
+              navigate('/superadmin');
+            } else if (role === 'admin') {
+              navigate('/admin');
+            } else {
+              navigate('/dashboard');
+            }
+          }}>
             <Icon name="ArrowLeft" className="mr-2" size={20} />
             Назад
           </Button>

@@ -247,7 +247,7 @@ const SystemSettings = () => {
             <h1 className="text-3xl font-bold text-white">Системные настройки</h1>
           </div>
           <Button
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate('/superadmin')}
             variant="outline"
             className="border-yellow-600/50 text-yellow-500 hover:bg-yellow-600/10"
           >
