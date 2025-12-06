@@ -74,17 +74,19 @@ const SystemSettings = () => {
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json<{
-          ФИО: string;
-          Email: string;
-          Подразделение: string;
-          Должность: string;
+          'ID№': string;
+          'ФИО': string;
+          'Компания': string;
+          'Подразделение': string;
+          'Должность': string;
+          'E-mail': string;
         }>(worksheet);
 
         const users: ImportedUser[] = jsonData
-          .filter((row) => row['Email'] && row['Email'].trim() !== '')
+          .filter((row) => row['E-mail'] && row['E-mail'].trim() !== '')
           .map((row) => ({
             fio: row['ФИО'] || '',
-            email: row['Email'].trim(),
+            email: row['E-mail'].trim(),
             subdivision: row['Подразделение'] || '',
             position: row['Должность'] || '',
             status: 'pending',
@@ -93,7 +95,7 @@ const SystemSettings = () => {
         if (users.length === 0) {
           toast({ 
             title: 'Нет данных для импорта', 
-            description: 'Убедитесь, что в файле есть колонка "Email" с заполненными значениями',
+            description: 'Убедитесь, что в файле есть колонка "E-mail" с заполненными значениями',
             variant: 'destructive' 
           });
           return;
@@ -204,9 +206,9 @@ const SystemSettings = () => {
 
   const downloadTemplate = () => {
     const template = [
-      ['ФИО', 'Email', 'Подразделение', 'Должность'],
-      ['Иванов Иван Иванович', 'ivanov@example.com', 'IT отдел', 'Разработчик'],
-      ['Петров Петр Петрович', 'petrov@example.com', 'Бухгалтерия', 'Бухгалтер'],
+      ['ID№', 'ФИО', 'Компания', 'Подразделение', 'Должность', 'E-mail'],
+      ['1', 'Иванов Иван Иванович', 'ООО "Пример"', 'IT отдел', 'Разработчик', 'ivanov@example.com'],
+      ['2', 'Петров Петр Петрович', 'ООО "Пример"', 'Бухгалтерия', 'Бухгалтер', 'petrov@example.com'],
     ];
 
     const ws = XLSX.utils.aoa_to_sheet(template);
