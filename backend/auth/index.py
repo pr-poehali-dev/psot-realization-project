@@ -134,9 +134,9 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 position_escaped = position.replace("'", "''") if position else ''
                 
                 org_id_sql = str(organization_id) if organization_id else 'NULL'
-                company_sql = f"'{company_escaped}'" if company else 'NULL'
-                subdivision_sql = f"'{subdivision_escaped}'" if subdivision else 'NULL'
-                position_sql = f"'{position_escaped}'" if position else 'NULL'
+                company_sql = f"'{company_escaped}'" if company_escaped else "''"
+                subdivision_sql = f"'{subdivision_escaped}'" if subdivision_escaped else "''"
+                position_sql = f"'{position_escaped}'" if position_escaped else "''"
                 
                 cur.execute(
                     f"INSERT INTO t_p80499285_psot_realization_pro.users (email, password_hash, fio, company, subdivision, position, organization_id, role) VALUES ('{email_escaped}', '{password_hash_escaped}', '{fio_escaped}', {company_sql}, {subdivision_sql}, {position_sql}, {org_id_sql}, 'user') RETURNING id"
