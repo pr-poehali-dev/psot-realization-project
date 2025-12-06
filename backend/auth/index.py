@@ -273,10 +273,15 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             else:
                 print(f"[AUTH DEBUG] User NOT found in DB")
             
-            cur.execute(
-                "SELECT u.id, u.fio, u.company, u.position, u.role, u.organization_id, u.is_blocked, u.blocked_until, o.is_blocked, o.blocked_until FROM t_p80499285_psot_realization_pro.users u LEFT JOIN t_p80499285_psot_realization_pro.organizations o ON u.organization_id = o.id WHERE u.email = %s AND u.password_hash = %s",
-                (email, password_hash)
-            )
+            email_escaped = email.replace("'", "''")
+            password_hash_escaped = password_hash.replace("'", "''")
+            cur.execute(f"""
+                SELECT u.id, u.fio, u.company, u.position, u.role, u.organization_id, 
+                       u.is_blocked, u.blocked_until, o.is_blocked, o.blocked_until, o.registration_code
+                FROM t_p80499285_psot_realization_pro.users u 
+                LEFT JOIN t_p80499285_psot_realization_pro.organizations o ON u.organization_id = o.id 
+                WHERE u.email = '{email_escaped}' AND u.password_hash = '{password_hash_escaped}'
+            """)
             result = cur.fetchone()
             print(f"[AUTH DEBUG] Final query result: {result is not None}")
             
@@ -364,7 +369,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                         'company': result[2],
                         'position': result[3],
                         'role': result[4],
-                        'organizationId': result[5]
+                        'organizationId': result[5],
+                        'registrationCode': result[10] if result[10] else None
                     })
                 }
             else:

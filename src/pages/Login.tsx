@@ -41,6 +41,19 @@ const Login = () => {
       console.log('Response data:', data);
 
       if (data.success) {
+        // Если пользователь принадлежит организации и вошёл НЕ через её страницу
+        if (data.registrationCode && !isRegister) {
+          toast({ 
+            title: 'Неверная страница входа', 
+            description: 'Перенаправляем на страницу вашего предприятия...',
+            duration: 3000
+          });
+          setTimeout(() => {
+            navigate(`/org/${data.registrationCode}`);
+          }, 1500);
+          return;
+        }
+        
         localStorage.setItem('userId', data.userId);
         localStorage.setItem('userFio', data.fio || fio);
         localStorage.setItem('userRole', data.role || 'user');

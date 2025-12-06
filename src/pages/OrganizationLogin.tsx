@@ -76,6 +76,19 @@ const OrganizationLogin = () => {
       const data = await response.json();
 
       if (data.success) {
+        // Проверяем, совпадает ли код организации пользователя с текущим
+        if (data.registrationCode && data.registrationCode !== orgCode) {
+          toast({ 
+            title: 'Неверная страница входа', 
+            description: 'Перенаправляем на страницу вашего предприятия...',
+            duration: 3000
+          });
+          setTimeout(() => {
+            navigate(`/org/${data.registrationCode}`);
+          }, 1500);
+          return;
+        }
+        
         localStorage.setItem('userId', data.userId);
         localStorage.setItem('userFio', data.fio);
         localStorage.setItem('userRole', data.role || 'user');
