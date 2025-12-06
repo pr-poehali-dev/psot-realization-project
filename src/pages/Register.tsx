@@ -123,22 +123,13 @@ const Register = () => {
         const loginData = await loginResponse.json();
 
         if (loginResponse.ok && loginData.success) {
-          // Сохраняем данные пользователя
-          localStorage.setItem('userId', loginData.userId);
-          localStorage.setItem('userFio', loginData.fio);
-          localStorage.setItem('userCompany', loginData.company);
-          localStorage.setItem('userPosition', loginData.position);
-          localStorage.setItem('userRole', loginData.role);
-          if (loginData.organizationId) {
-            localStorage.setItem('organizationId', loginData.organizationId);
-          }
-          
-          // Перенаправляем на дашборд
-          navigate('/dashboard');
-        } else {
-          // Если автоматический вход не удался, перенаправляем на страницу входа
+          // Регистрация успешна, перенаправляем на форму входа организации
           toast.success('Регистрация успешна! Войдите в систему');
-          navigate('/');
+          navigate(`/org/${code}`);
+        } else {
+          // Если автоматический вход не удался, перенаправляем на страницу входа организации
+          toast.success('Регистрация успешна! Войдите в систему');
+          navigate(`/org/${code}`);
         }
       } else {
         toast.error(data.error || 'Ошибка регистрации');
