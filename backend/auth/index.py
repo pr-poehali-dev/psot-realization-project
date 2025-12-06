@@ -29,42 +29,21 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         action = body_data.get('action')
         
         if action == 'register':
-            import psycopg2
-            
-            email = body_data.get('email')
-            password = body_data.get('password')
-            code = body_data.get('code')
-            full_name = body_data.get('full_name')
-            fio = body_data.get('fio') or full_name
-            company = body_data.get('company')
-            subdivision = body_data.get('subdivision')
-            position = body_data.get('position')
-            
-            if not email or not password or not fio:
-                return {
-                    'statusCode': 400,
-                    'headers': {
-                        'Content-Type': 'application/json',
-                        'Access-Control-Allow-Origin': '*'
-                    },
-                    'isBase64Encoded': False,
-                    'body': json.dumps({'success': False, 'error': 'Email, password and full name are required'})
-                }
-            
-            fio_parts = fio.strip().split()
-            if len(fio_parts) < 3:
-                return {
-                    'statusCode': 400,
-                    'headers': {
-                        'Content-Type': 'application/json',
-                        'Access-Control-Allow-Origin': '*'
-                    },
-                    'isBase64Encoded': False,
-                    'body': json.dumps({'success': False, 'error': 'ФИО должно содержать Фамилию, Имя и Отчество (три слова)'})
-                }
-            
-            for part in fio_parts[:3]:
-                if not part[0].isupper():
+            try:
+                import psycopg2
+                
+                email = body_data.get('email')
+                password = body_data.get('password')
+                code = body_data.get('code')
+                full_name = body_data.get('full_name')
+                fio = body_data.get('fio') or full_name
+                company = body_data.get('company')
+                subdivision = body_data.get('subdivision')
+                position = body_data.get('position')
+                
+                print(f"[REGISTER DEBUG] Registration request: email={email}, code={code}, fio={fio}")
+                
+                if not email or not password or not fio:
                     return {
                         'statusCode': 400,
                         'headers': {
@@ -72,27 +51,72 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                             'Access-Control-Allow-Origin': '*'
                         },
                         'isBase64Encoded': False,
-                        'body': json.dumps({'success': False, 'error': 'Каждое слово в ФИО должно начинаться с заглавной буквы'})
+                        'body': json.dumps({'success': False, 'error': 'Email, password and full name are required'})
                     }
-            
-            password_hash = hashlib.sha256(password.encode()).hexdigest()
-            
-            conn = psycopg2.connect(os.environ['DATABASE_URL'])
-            cur = conn.cursor()
-            
-            email_escaped = email.replace("'", "''")
-            code_escaped = code.replace("'", "''") if code else ''
-            fio_escaped = fio.replace("'", "''")
-            password_hash_escaped = password_hash.replace("'", "''")
-            
-            organization_id = None
-            if code:
-                cur.execute(f"SELECT id, name FROM t_p80499285_psot_realization_pro.organizations WHERE registration_code = '{code_escaped}'")
-                org_result = cur.fetchone()
-                if org_result:
-                    organization_id = org_result[0]
-                    company = org_result[1]
-                else:
+                
+                fio_parts = fio.strip().split()
+                if len(fio_parts) < 3:
+                    return {
+                        'statusCode': 400,
+                        'headers': {
+                            'Content-Type': 'application/json',
+                            'Access-Control-Allow-Origin': '*'
+                        },
+                        'isBase64Encoded': False,
+                        'body': json.dumps({'success': False, 'error': 'ФИО должно содержать Фамилию, Имя и Отчество (три слова)'})
+                    }
+                
+                for part in fio_parts[:3]:
+                    if not part[0].isupper():
+                        return {
+                            'statusCode': 400,
+                            'headers': {
+                                'Content-Type': 'application/json',
+                                'Access-Control-Allow-Origin': '*'
+                            },
+                            'isBase64Encoded': False,
+                            'body': json.dumps({'success': False, 'error': 'Каждое слово в ФИО должно начинаться с заглавной буквы'})
+                        }
+                
+                password_hash = hashlib.sha256(password.encode()).hexdigest()
+                
+                conn = psycopg2.connect(os.environ['DATABASE_URL'])
+                cur = conn.cursor()
+                
+                email_escaped = email.replace("'", "''")
+                code_escaped = code.replace("'", "''") if code else ''
+                fio_escaped = fio.replace("'", "''")
+                password_hash_escaped = password_hash.replace("'", "''")
+                
+                organization_id = None
+                if code:
+                    print(f"[REGISTER DEBUG] Checking registration code: {code_escaped}")
+                    cur.execute(f"SELECT id, name FROM t_p80499285_psot_realization_pro.organizations WHERE registration_code = '{code_escaped}'")
+                    org_result = cur.fetchone()
+                    print(f"[REGISTER DEBUG] Organization query result: {org_result}")
+                    if org_result:
+                        organization_id = org_result[0]
+                        company = org_result[1]
+                        print(f"[REGISTER DEBUG] Found organization: ID={organization_id}, Name={company}")
+                    else:
+                        print(f"[REGISTER DEBUG] No organization found for code: {code_escaped}")
+                        cur.close()
+                        conn.close()
+                        return {
+                            'statusCode': 400,
+                            'headers': {
+                                'Content-Type': 'application/json',
+                                'Access-Control-Allow-Origin': '*'
+                            },
+                            'isBase64Encoded': False,
+                            'body': json.dumps({'success': False, 'error': f'Неверный код приглашения: {code}'})
+                        }
+                
+                cur.execute(f"SELECT id FROM t_p80499285_psot_realization_pro.users WHERE email = '{email_escaped}'")
+                existing = cur.fetchone()
+                
+                if existing:
+                    print(f"[REGISTER DEBUG] Email already exists: {email}")
                     cur.close()
                     conn.close()
                     return {
@@ -102,66 +126,65 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                             'Access-Control-Allow-Origin': '*'
                         },
                         'isBase64Encoded': False,
-                        'body': json.dumps({'success': False, 'error': 'Invalid registration code'})
+                        'body': json.dumps({'success': False, 'error': 'Этот email уже зарегистрирован'})
                     }
-            
-            cur.execute(f"SELECT id FROM t_p80499285_psot_realization_pro.users WHERE email = '{email_escaped}'")
-            existing = cur.fetchone()
-            
-            if existing:
+                
+                company_escaped = company.replace("'", "''") if company else ''
+                subdivision_escaped = subdivision.replace("'", "''") if subdivision else ''
+                position_escaped = position.replace("'", "''") if position else ''
+                
+                org_id_sql = str(organization_id) if organization_id else 'NULL'
+                company_sql = f"'{company_escaped}'" if company else 'NULL'
+                subdivision_sql = f"'{subdivision_escaped}'" if subdivision else 'NULL'
+                position_sql = f"'{position_escaped}'" if position else 'NULL'
+                
+                cur.execute(
+                    f"INSERT INTO t_p80499285_psot_realization_pro.users (email, password_hash, fio, company, subdivision, position, organization_id, role) VALUES ('{email_escaped}', '{password_hash_escaped}', '{fio_escaped}', {company_sql}, {subdivision_sql}, {position_sql}, {org_id_sql}, 'user') RETURNING id"
+                )
+                user_id = cur.fetchone()[0]
+                
+                surname_initial = fio_parts[0][0].upper()
+                name_initial = fio_parts[1][0].upper()
+                patronymic_initial = fio_parts[2][0].upper()
+                display_name = f"ID№{str(user_id).zfill(5)}-{surname_initial}.{name_initial}.{patronymic_initial}."
+                display_name_escaped = display_name.replace("'", "''")
+                
+                cur.execute(
+                    f"UPDATE t_p80499285_psot_realization_pro.users SET display_name = '{display_name_escaped}' WHERE id = {user_id}"
+                )
+                
+                cur.execute(
+                    f"INSERT INTO t_p80499285_psot_realization_pro.user_stats (user_id) VALUES ({user_id})"
+                )
+                
+                conn.commit()
                 cur.close()
                 conn.close()
+                
+                print(f"[REGISTER DEBUG] Registration successful: user_id={user_id}, display_name={display_name}")
+                
                 return {
-                    'statusCode': 400,
+                    'statusCode': 200,
                     'headers': {
                         'Content-Type': 'application/json',
                         'Access-Control-Allow-Origin': '*'
                     },
                     'isBase64Encoded': False,
-                    'body': json.dumps({'success': False, 'error': 'Email already exists'})
+                    'body': json.dumps({'success': True, 'userId': user_id, 'displayName': display_name})
                 }
-            
-            company_escaped = company.replace("'", "''") if company else ''
-            subdivision_escaped = subdivision.replace("'", "''") if subdivision else ''
-            position_escaped = position.replace("'", "''") if position else ''
-            
-            org_id_sql = str(organization_id) if organization_id else 'NULL'
-            company_sql = f"'{company_escaped}'" if company else 'NULL'
-            subdivision_sql = f"'{subdivision_escaped}'" if subdivision else 'NULL'
-            position_sql = f"'{position_escaped}'" if position else 'NULL'
-            
-            cur.execute(
-                f"INSERT INTO t_p80499285_psot_realization_pro.users (email, password_hash, fio, company, subdivision, position, organization_id, role) VALUES ('{email_escaped}', '{password_hash_escaped}', '{fio_escaped}', {company_sql}, {subdivision_sql}, {position_sql}, {org_id_sql}, 'user') RETURNING id"
-            )
-            user_id = cur.fetchone()[0]
-            
-            surname_initial = fio_parts[0][0].upper()
-            name_initial = fio_parts[1][0].upper()
-            patronymic_initial = fio_parts[2][0].upper()
-            display_name = f"ID№{str(user_id).zfill(5)}-{surname_initial}.{name_initial}.{patronymic_initial}."
-            display_name_escaped = display_name.replace("'", "''")
-            
-            cur.execute(
-                f"UPDATE t_p80499285_psot_realization_pro.users SET display_name = '{display_name_escaped}' WHERE id = {user_id}"
-            )
-            
-            cur.execute(
-                f"INSERT INTO t_p80499285_psot_realization_pro.user_stats (user_id) VALUES ({user_id})"
-            )
-            
-            conn.commit()
-            cur.close()
-            conn.close()
-            
-            return {
-                'statusCode': 200,
-                'headers': {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*'
-                },
-                'isBase64Encoded': False,
-                'body': json.dumps({'success': True, 'userId': user_id, 'displayName': display_name})
-            }
+            except Exception as e:
+                print(f"[REGISTER ERROR] Exception during registration: {str(e)}")
+                import traceback
+                traceback.print_exc()
+                return {
+                    'statusCode': 500,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'isBase64Encoded': False,
+                    'body': json.dumps({'success': False, 'error': f'Ошибка сервера: {str(e)}'})
+                }
         
         elif action == 'login':
             import psycopg2
