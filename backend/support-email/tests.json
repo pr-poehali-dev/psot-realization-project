@@ -1,0 +1,28 @@
+{
+  "tests": [
+    {
+      "name": "Test OPTIONS request",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Test support request submission",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "requestType": "problem",
+        "description": "Тестовое сообщение техподдержки",
+        "userFio": "Тестов Тест Тестович",
+        "userCompany": "ООО Тест",
+        "userEmail": "test@test.com",
+        "userId": "1"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "success": true
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

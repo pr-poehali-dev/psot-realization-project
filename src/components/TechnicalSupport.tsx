@@ -27,41 +27,32 @@ export const TechnicalSupport = () => {
       const userEmail = localStorage.getItem('userEmail') || 'Не указан';
       const userId = localStorage.getItem('userId') || 'Не указан';
 
-      const requestTypes = {
-        problem: 'Проблема в работе',
-        recommendation: 'Рекомендация',
-        new_feature: 'Заказать новый блок'
-      };
+      const response = await fetch('https://functions.poehali.dev/e519c776-33cc-4cea-bdaa-1d10b684b777', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requestType,
+          description,
+          userFio,
+          userCompany,
+          userEmail,
+          userId
+        })
+      });
 
-      const message = `
-📋 Новый запрос в техподдержку
+      const data = await response.json();
 
-👤 Пользователь: ${userFio}
-🏢 Предприятие: ${userCompany}
-📧 Email: ${userEmail}
-🆔 ID: ${userId}
-
-📌 Тип запроса: ${requestTypes[requestType as keyof typeof requestTypes]}
-
-💬 Описание:
-${description}
-
-⏰ Дата: ${new Date().toLocaleString('ru-RU')}
-      `.trim();
-
-      // Отправляем в Telegram (можно добавить бэкенд-функцию для отправки)
-      console.log('Support request:', message);
-      
-      // Имитация отправки (в будущем подключить реальную отправку)
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast.success('Запрос отправлен! Мы свяжемся с вами в ближайшее время');
-      setDescription('');
-      setRequestType('problem');
-      setOpen(false);
+      if (response.ok && data.success) {
+        toast.success('Запрос отправлен! Мы свяжемся с вами в ближайшее время');
+        setDescription('');
+        setRequestType('problem');
+        setOpen(false);
+      } else {
+        toast.error(data.error || 'Ошибка отправки запроса');
+      }
     } catch (error) {
       console.error('Support request error:', error);
-      toast.error('Ошибка отправки запроса');
+      toast.error('Ошибка соединения');
     } finally {
       setSending(false);
     }
