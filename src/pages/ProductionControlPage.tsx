@@ -47,8 +47,22 @@ export default function ProductionControlPage() {
   ]);
 
   useEffect(() => {
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+      navigate('/');
+      return;
+    }
+    
+    const userFio = localStorage.getItem('userFio') || '';
+    const userPosition = localStorage.getItem('userPosition') || '';
+    const userDepartment = localStorage.getItem('userDepartment') || '';
+    
+    setInspectorFio(userFio);
+    setInspectorPosition(userPosition);
+    setDepartment(userDepartment);
+    
     loadOrgUsers();
-  }, []);
+  }, [navigate]);
 
   const loadOrgUsers = async () => {
     const organizationId = localStorage.getItem('organizationId');

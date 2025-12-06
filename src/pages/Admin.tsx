@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import Icon from '@/components/ui/icon';
+import { TechnicalSupport } from '@/components/TechnicalSupport';
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -62,14 +63,17 @@ const Admin = () => {
               <p className="text-blue-400">{userFio}</p>
             </div>
           </div>
-          <Button
-            onClick={handleLogout}
-            variant="outline"
-            className="border-blue-600/50 text-blue-400 hover:bg-blue-600/10"
-          >
-            <Icon name="LogOut" size={20} className="mr-2" />
-            Выход
-          </Button>
+          <div className="flex gap-3">
+            <TechnicalSupport />
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              className="border-blue-600/50 text-blue-400 hover:bg-blue-600/10"
+            >
+              <Icon name="LogOut" size={20} className="mr-2" />
+              Выход
+            </Button>
+          </div>
         </div>
       </div>
 
